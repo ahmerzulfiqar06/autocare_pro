@@ -1,0 +1,211 @@
+# Flutter/Dart/Pub related
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+flutter_*.png
+flutter_*.jpeg
+flutter_*.webp
+
+# Android related
+**/android/app/debug
+**/android/app/profile
+**/android/app/release
+**/android/app/build/
+**/android/app/build.gradle.kts
+**/android/app/google-services.json
+**/android/app/src/debug/
+**/android/app/src/profile/
+**/android/app/src/release/
+**/android/gradle/
+**/android/.gradle/
+**/android/captures/
+**/android/gradlew
+**/android/gradlew.bat
+**/android/local.properties
+**/android/app/src/main/AndroidManifest.xml.backup
+
+# iOS related
+**/ios/Flutter/App.framework
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+**/ios/Flutter/Generated.xcconfig
+**/ios/Flutter/app.flx
+**/ios/Flutter/app.zip
+**/ios/Flutter/flutter_assets/
+**/ios/Flutter/flutter_export_environment.sh
+**/ios/Flutter/GeneratedPluginRegistrant.h
+**/ios/Flutter/GeneratedPluginRegistrant.m
+**/ios/Pods/
+**/ios/.symlinks/
+**/ios/dSYM/
+**/ios/build/
+**/ios/Flutter/Flutter-Debug.xcconfig
+**/ios/Flutter/Flutter-Release.xcconfig
+**/ios/Flutter/Flutter-Profile.xcconfig
+**/ios/Runner.xcodeproj/project.pbxproj
+**/ios/Runner.xcodeproj/xcuserdata/
+**/ios/Runner.xcworkspace/xcuserdata/
+**/ios/Runner/GoogleService-Info.plist
+
+# macOS related
+**/macos/Flutter/Flutter-Debug.xcconfig
+**/macos/Flutter/Flutter-Release.xcconfig
+**/macos/Flutter/Flutter-Profile.xcconfig
+**/macos/Flutter/GeneratedPluginRegistrant.swift
+**/macos/Runner.xcodeproj/project.pbxproj
+**/macos/Runner.xcodeproj/xcuserdata/
+**/macos/Runner.xcworkspace/xcuserdata/
+**/macos/Runner/GoogleService-Info.plist
+
+# Windows related
+**/windows/flutter/Flutter-Debug.xcconfig
+**/windows/flutter/Flutter-Release.xcconfig
+**/windows/flutter/Flutter-Profile.xcconfig
+**/windows/flutter/GeneratedPluginRegistrant.cc
+**/windows/runner.exe
+**/windows/runner/Visual Studio 2019/
+**/windows/runner/cmake-build-debug/
+**/windows/runner/cmake-build-release/
+**/windows/runner/cmake-build-relwithdebinfo/
+**/windows/runner/cmake-generated/
+
+# Linux related
+**/linux/flutter/Flutter-Debug.xcconfig
+**/linux/flutter/Flutter-Release.xcconfig
+**/linux/flutter/Flutter-Profile.xcconfig
+**/linux/flutter/GeneratedPluginRegistrant.cc
+**/linux/runner/cmake-build-debug/
+**/linux/runner/cmake-build-release/
+**/linux/runner/cmake-build-relwithdebinfo/
+**/linux/runner/cmake-generated/
+
+# Web related
+**/web/index.html.backup
+
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory used by tools like istanbul
+coverage/
+
+# nyc test coverage
+.nyc_output
+
+# Dependency directories
+node_modules/
+
+# Optional npm cache directory
+.npm
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# dotenv environment variables file
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Firebase
+.firebase/
+firebase-debug.log
+firestore-debug.log
+
+# Database files (SQLite)
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Screenshots and assets (uncomment if you want to ignore these)
+# screenshots/
+# assets/images/
+# assets/icons/
+
+# Analysis results
+analyzer-results.json
+
+# Flutter intl
+lib/generated/
+*.g.dart
+
+# Test coverage
+coverage/
+
+# Build artifacts
+*.apk
+*.aab
+*.ipa
+*.app
+*.dmg
+*.pkg
+*.deb
+*.rpm
+*.snap
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# Local development files
+.env.local
+config.local.json
+
+# Backup files
+*.bak
+*.backup
+
+# Archive files
+*.zip
+*.tar.gz
+*.rar
+
+# Documentation build
+docs/.vuepress/dist/
+docs/_book/
+
+# Local Netlify folder
+.netlify
+
+# Firebase functions
+functions/node_modules/
+functions/.firebase/
+functions/firebase-debug.log

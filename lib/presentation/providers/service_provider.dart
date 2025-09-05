@@ -337,7 +337,3 @@ class ServiceProvider extends ChangeNotifier {
   }
 }
 
-// Extension for firstOrNull
-extension IterableExtension<T> on Iterable<T> {
-  T? get firstOrNull => isEmpty ? null : first;
-}

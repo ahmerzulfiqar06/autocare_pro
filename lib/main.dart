@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:autocare_pro/config/routes.dart';
+// import 'package:autocare_pro/config/routes.dart';
 import 'package:autocare_pro/core/theme/app_theme.dart';
 import 'package:autocare_pro/data/repositories/vehicle_repository.dart';
 import 'package:autocare_pro/data/repositories/service_repository.dart';
@@ -8,6 +8,42 @@ import 'package:autocare_pro/data/services/database_service.dart';
 import 'package:autocare_pro/presentation/providers/app_provider.dart';
 import 'package:autocare_pro/presentation/providers/vehicle_provider.dart';
 import 'package:autocare_pro/presentation/providers/service_provider.dart';
+
+// Temporary Routes class
+class Routes {
+  static const String dashboard = '/';
+  static const String vehicleList = '/vehicles';
+  static const String vehicleDetails = '/vehicle-details';
+  static const String addVehicle = '/add-vehicle';
+
+  static Map<String, WidgetBuilder> getRoutes() {
+    return {
+      dashboard: (context) => const _PlaceholderScreen('Dashboard'),
+      vehicleList: (context) => const _PlaceholderScreen('Vehicle List'),
+      vehicleDetails: (context) => const _PlaceholderScreen('Vehicle Details'),
+      addVehicle: (context) => const _PlaceholderScreen('Add Vehicle'),
+    };
+  }
+}
+
+class _PlaceholderScreen extends StatelessWidget {
+  const _PlaceholderScreen(this.title);
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(title)),
+      body: Center(
+        child: Text(
+          '$title Screen\n\n🚗 AutoCare Pro is Running! ✨',
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.headlineMedium,
+        ),
+      ),
+    );
+  }
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

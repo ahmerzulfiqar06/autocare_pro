@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   // Color scheme
@@ -29,43 +28,43 @@ class AppTheme {
       ),
 
       // Typography
-      textTheme: GoogleFonts.interTextTheme().copyWith(
-        headlineLarge: GoogleFonts.inter(
+      textTheme: const TextTheme(
+        headlineLarge: TextStyle(
           fontSize: 32,
           fontWeight: FontWeight.w600,
           color: Colors.black87,
         ),
-        headlineMedium: GoogleFonts.inter(
+        headlineMedium: TextStyle(
           fontSize: 28,
           fontWeight: FontWeight.w600,
           color: Colors.black87,
         ),
-        headlineSmall: GoogleFonts.inter(
+        headlineSmall: TextStyle(
           fontSize: 24,
           fontWeight: FontWeight.w600,
           color: Colors.black87,
         ),
-        titleLarge: GoogleFonts.inter(
+        titleLarge: TextStyle(
           fontSize: 22,
           fontWeight: FontWeight.w500,
           color: Colors.black87,
         ),
-        titleMedium: GoogleFonts.inter(
+        titleMedium: TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w500,
           color: Colors.black87,
         ),
-        bodyLarge: GoogleFonts.inter(
+        bodyLarge: TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w400,
           color: Colors.black87,
         ),
-        bodyMedium: GoogleFonts.inter(
+        bodyMedium: TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w400,
           color: Colors.black87,
         ),
-        labelLarge: GoogleFonts.inter(
+        labelLarge: TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w500,
           color: Colors.black87,
@@ -85,7 +84,7 @@ class AppTheme {
       ),
 
       // Card theme
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         elevation: 2,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
@@ -163,43 +162,43 @@ class AppTheme {
       ),
 
       // Typography
-      textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme).copyWith(
-        headlineLarge: GoogleFonts.inter(
+      textTheme: ThemeData.dark().textTheme.copyWith(
+        headlineLarge: const TextStyle(
           fontSize: 32,
           fontWeight: FontWeight.w600,
           color: Colors.white,
         ),
-        headlineMedium: GoogleFonts.inter(
+        headlineMedium: const TextStyle(
           fontSize: 28,
           fontWeight: FontWeight.w600,
           color: Colors.white,
         ),
-        headlineSmall: GoogleFonts.inter(
+        headlineSmall: const TextStyle(
           fontSize: 24,
           fontWeight: FontWeight.w600,
           color: Colors.white,
         ),
-        titleLarge: GoogleFonts.inter(
+        titleLarge: const TextStyle(
           fontSize: 22,
           fontWeight: FontWeight.w500,
           color: Colors.white,
         ),
-        titleMedium: GoogleFonts.inter(
+        titleMedium: const TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w500,
           color: Colors.white,
         ),
-        bodyLarge: GoogleFonts.inter(
+        bodyLarge: const TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w400,
           color: Colors.white,
         ),
-        bodyMedium: GoogleFonts.inter(
+        bodyMedium: const TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w400,
           color: Colors.white,
         ),
-        labelLarge: GoogleFonts.inter(
+        labelLarge: const TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w500,
           color: Colors.white,
@@ -219,7 +218,7 @@ class AppTheme {
       ),
 
       // Card theme
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         elevation: 2,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),

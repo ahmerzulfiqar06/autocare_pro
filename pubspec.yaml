@@ -34,7 +34,6 @@ dependencies:
   fl_chart: ^0.66.1
 
   # UI & Utilities
-  google_fonts: ^6.1.0
   intl: ^0.19.0
   uuid: ^4.2.1
 
@@ -54,18 +53,3 @@ flutter:
     - assets/images/
     - assets/icons/
 
-  fonts:
-    - family: Inter
-      fonts:
-        - asset: fonts/Inter-Regular.ttf
-        - asset: fonts/Inter-Medium.ttf
-          weight: 500
-        - asset: fonts/Inter-Bold.ttf
-          weight: 700
-    - family: Roboto
-      fonts:
-        - asset: fonts/Roboto-Regular.ttf
-        - asset: fonts/Roboto-Medium.ttf
-          weight: 500
-        - asset: fonts/Roboto-Bold.ttf
-          weight: 700

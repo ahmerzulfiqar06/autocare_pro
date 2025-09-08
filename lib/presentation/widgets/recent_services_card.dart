@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:autocare_pro/data/models/service.dart';
 import 'package:autocare_pro/core/utils/helpers.dart';
@@ -22,15 +23,29 @@ class _RecentServicesCardState extends State<RecentServicesCard> {
   }
 
   Future<void> _loadRecentServices() async {
-    final serviceProvider = context.read<ServiceProvider>();
-    await serviceProvider.loadAllServices();
+    await Future.delayed(Duration.zero); // Ensure context is available
+    if (!mounted) return;
 
-    setState(() {
-      _recentServices = serviceProvider.services
-          .take(3) // Show only first 3 recent services
-          .toList();
-      _isLoading = false;
-    });
+    try {
+      final serviceProvider = context.read<ServiceProvider>();
+      await serviceProvider.loadAllServices();
+
+      if (mounted) {
+        setState(() {
+          _recentServices = serviceProvider.services
+              .take(3) // Show only first 3 recent services
+              .toList();
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+      debugPrint('Error loading recent services: $e');
+    }
   }
 
   @override

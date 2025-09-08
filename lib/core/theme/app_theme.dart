@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
 
 class AppTheme {
-  // Color scheme
-  static const Color primaryColor = Color(0xFF1565C0); // Professional blue
-  static const Color secondaryColor = Color(0xFF42A5F5);
-  static const Color accentColor = Color(0xFF1976D2);
-  static const Color errorColor = Color(0xFFD32F2F);
-  static const Color successColor = Color(0xFF388E3C);
-  static const Color warningColor = Color(0xFFF57C00);
+  // Modern Professional Color Palette (Google Material 3 inspired)
+  static const Color primaryBlue = Color(0xFF1A73E8);      // Google Blue - Primary
+  static const Color primaryLight = Color(0xFF4285F4);     // Light Blue - Secondary
+  static const Color accentGreen = Color(0xFF34A853);      // Success Green
+  static const Color accentOrange = Color(0xFFFBBC05);     // Warning Orange
+  static const Color accentRed = Color(0xFFEA4335);        // Error Red
+  static const Color accentPurple = Color(0xFF9C27B0);     // Accent Purple
+
+  // Neutral Colors
+  static const Color surfaceLight = Color(0xFFFAFAFA);
+  static const Color surfaceDark = Color(0xFF121212);
+  static const Color cardLight = Color(0xFFFFFFFF);
+  static const Color cardDark = Color(0xFF1E1E1E);
 
   // Light theme
   static ThemeData get lightTheme {
@@ -15,16 +21,40 @@ class AppTheme {
       useMaterial3: true,
       brightness: Brightness.light,
 
-      // Color scheme
+      // Enhanced Color scheme with Material 3
       colorScheme: const ColorScheme.light(
-        primary: primaryColor,
-        secondary: secondaryColor,
-        tertiary: accentColor,
-        error: errorColor,
-        surface: Colors.white,
-        onSurface: Colors.black87,
-        surfaceVariant: Color(0xFFF5F5F5),
-        onSurfaceVariant: Colors.black54,
+        primary: primaryBlue,
+        onPrimary: Colors.white,
+        primaryContainer: Color(0xFFE3F2FD),
+        onPrimaryContainer: Color(0xFF0D47A1),
+
+        secondary: accentGreen,
+        onSecondary: Colors.white,
+        secondaryContainer: Color(0xFFE8F5E8),
+        onSecondaryContainer: Color(0xFF1B5E20),
+
+        tertiary: accentPurple,
+        onTertiary: Colors.white,
+        tertiaryContainer: Color(0xFFF3E5F5),
+        onTertiaryContainer: Color(0xFF4A148C),
+
+        error: accentRed,
+        onError: Colors.white,
+        errorContainer: Color(0xFFFCE8E6),
+        onErrorContainer: Color(0xFFB71C1C),
+
+        surface: cardLight,
+        onSurface: Color(0xFF1C1B1F),
+        surfaceContainerHighest: Color(0xFFF5F5F5),
+        onSurfaceVariant: Color(0xFF49454F),
+
+        outline: Color(0xFF79747E),
+        outlineVariant: Color(0xFFCAC4D0),
+
+        shadow: Color(0xFF000000),
+        scrim: Color(0xFF000000),
+
+        surfaceTint: primaryBlue,
       ),
 
       // Typography
@@ -71,25 +101,31 @@ class AppTheme {
         ),
       ),
 
-      // App bar theme
+      // Enhanced AppBar with modern styling
       appBarTheme: const AppBarTheme(
-        backgroundColor: primaryColor,
-        foregroundColor: Colors.white,
+        backgroundColor: surfaceLight,
+        foregroundColor: Color(0xFF1C1B1F),
         elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        shadowColor: Colors.transparent,
         centerTitle: true,
         titleTextStyle: TextStyle(
           fontSize: 20,
           fontWeight: FontWeight.w600,
+          color: Color(0xFF1C1B1F),
         ),
       ),
 
-      // Card theme
+      // Modern Card theme with subtle shadows
       cardTheme: CardThemeData(
-        elevation: 2,
+        elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
         ),
-        color: Colors.white,
+        color: cardLight,
+        shadowColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       ),
 
       // Button themes
@@ -121,21 +157,21 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: primaryColor, width: 2),
+          borderSide: BorderSide(color: primaryBlue, width: 2),
         ),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       ),
 
       // Floating action button theme
-      floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: primaryColor,
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: primaryBlue,
         foregroundColor: Colors.white,
       ),
 
       // Bottom navigation bar theme
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: Colors.white,
-        selectedItemColor: primaryColor,
+        selectedItemColor: primaryBlue,
         unselectedItemColor: Colors.black54,
         type: BottomNavigationBarType.fixed,
         elevation: 8,
@@ -151,14 +187,14 @@ class AppTheme {
 
       // Color scheme
       colorScheme: const ColorScheme.dark(
-        primary: Color(0xFF42A5F5),
-        secondary: Color(0xFF1976D2),
-        tertiary: accentColor,
-        error: Color(0xFFEF5350),
-        surface: Color(0xFF121212),
-        onSurface: Colors.white,
-        surfaceVariant: Color(0xFF1E1E1E),
-        onSurfaceVariant: Colors.white70,
+        primary: primaryLight,
+        secondary: accentGreen,
+        tertiary: accentPurple,
+        error: accentRed,
+        surface: cardDark,
+        onSurface: Color(0xFFE6E1E5),
+        surfaceVariant: Color(0xFF2B2930),
+        onSurfaceVariant: Color(0xFFCAC4D0),
       ),
 
       // Typography
@@ -214,6 +250,7 @@ class AppTheme {
         titleTextStyle: TextStyle(
           fontSize: 20,
           fontWeight: FontWeight.w600,
+          color: Colors.white,
         ),
       ),
 

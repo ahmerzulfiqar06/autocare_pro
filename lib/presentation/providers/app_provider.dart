@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class AppProvider extends ChangeNotifier {
   static const String _themeModeKey = 'theme_mode';
 
-  ThemeMode _themeMode = ThemeMode.system;
+  ThemeMode _themeMode = ThemeMode.light;
   bool _isInitialized = false;
 
   ThemeMode get themeMode => _themeMode;
@@ -16,7 +16,7 @@ class AppProvider extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
 
     // Load theme mode
-    final themeModeIndex = prefs.getInt(_themeModeKey) ?? ThemeMode.system.index;
+    final themeModeIndex = prefs.getInt(_themeModeKey) ?? ThemeMode.light.index;
     _themeMode = ThemeMode.values[themeModeIndex];
 
     _isInitialized = true;

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:autocare_pro/data/models/service_schedule.dart';
 import 'package:autocare_pro/core/utils/helpers.dart';
@@ -22,12 +23,26 @@ class _UpcomingServicesCardState extends State<UpcomingServicesCard> {
   }
 
   Future<void> _loadUpcomingServices() async {
-    final serviceProvider = context.read<ServiceProvider>();
-    final upcoming = await serviceProvider.getUpcomingServices(daysAhead: 30);
-    setState(() {
-      _upcomingServices = upcoming.take(3).toList(); // Show only first 3
-      _isLoading = false;
-    });
+    await Future.delayed(Duration.zero); // Ensure context is available
+    if (!mounted) return;
+
+    try {
+      final serviceProvider = context.read<ServiceProvider>();
+      final upcoming = await serviceProvider.getUpcomingServices(daysAhead: 30);
+      if (mounted) {
+        setState(() {
+          _upcomingServices = upcoming.take(3).toList(); // Show only first 3
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+      debugPrint('Error loading upcoming services: $e');
+    }
   }
 
   @override
@@ -143,7 +158,7 @@ class _UpcomingServicesCardState extends State<UpcomingServicesCard> {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(
-                _getServiceIcon(schedule.serviceType),
+                _getServiceIcon(schedule.serviceType.name),
                 color: _getServiceColor(schedule),
                 size: 20,
               ),
@@ -156,7 +171,7 @@ class _UpcomingServicesCardState extends State<UpcomingServicesCard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    schedule.serviceType,
+                    schedule.serviceType.displayName,
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w500,
                     ),

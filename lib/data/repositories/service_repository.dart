@@ -181,8 +181,13 @@ class ServiceRepository {
       final updatedSchedule = ServiceSchedule(
         id: schedule.id,
         vehicleId: schedule.vehicleId,
+        serviceName: schedule.serviceName,
+        description: schedule.description,
         serviceType: schedule.serviceType,
+        frequency: schedule.frequency,
+        mileageInterval: schedule.mileageInterval,
         intervalMiles: schedule.intervalMiles,
+        monthsInterval: schedule.monthsInterval,
         intervalMonths: schedule.intervalMonths,
         lastServiceDate: serviceDate,
         lastServiceMileage: serviceMileage,
@@ -213,16 +218,16 @@ class ServiceRepository {
 
   // Validate service schedule data
   void _validateServiceSchedule(ServiceSchedule schedule) {
-    if (schedule.intervalMiles < 0) {
+    if (schedule.mileageInterval != null && schedule.mileageInterval! < 0) {
       throw Exception('Interval miles cannot be negative');
     }
-    if (schedule.intervalMonths < 0) {
+    if (schedule.monthsInterval != null && schedule.monthsInterval! < 0) {
       throw Exception('Interval months cannot be negative');
     }
-    if (schedule.intervalMiles == 0 && schedule.intervalMonths == 0) {
+    if ((schedule.mileageInterval ?? 0) == 0 && (schedule.monthsInterval ?? 0) == 0) {
       throw Exception('At least one interval (miles or months) must be set');
     }
-    if (schedule.lastServiceMileage < 0) {
+    if (schedule.lastServiceMileage != null && schedule.lastServiceMileage! < 0) {
       throw Exception('Last service mileage cannot be negative');
     }
   }

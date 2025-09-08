@@ -161,6 +161,15 @@ class Helpers {
     );
   }
 
+  // Show info snackbar
+  static void showInfoSnackBar(BuildContext context, String message) {
+    showSnackBar(
+      context,
+      message,
+      backgroundColor: Theme.of(context).colorScheme.primary,
+    );
+  }
+
   // Show loading dialog
   static void showLoadingDialog(BuildContext context, String message) {
     showDialog(
@@ -191,10 +200,12 @@ class Helpers {
     String confirmText = 'Confirm',
     String cancelText = 'Cancel',
     Color? confirmColor,
+    IconData? icon,
   }) {
     return showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
+        icon: icon != null ? Icon(icon, size: 48, color: confirmColor) : null,
         title: Text(title),
         content: Text(message),
         actions: [
@@ -202,10 +213,11 @@ class Helpers {
             onPressed: () => Navigator.of(context).pop(false),
             child: Text(cancelText),
           ),
-          TextButton(
+          ElevatedButton(
             onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(
-              foregroundColor: confirmColor ?? Theme.of(context).colorScheme.primary,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: confirmColor ?? Theme.of(context).colorScheme.primary,
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
             ),
             child: Text(confirmText),
           ),
@@ -219,9 +231,7 @@ class Helpers {
     Function() callback, {
     Duration delay = const Duration(milliseconds: 300),
   }) {
-    Timer? timer;
-    timer?.cancel();
-    timer = Timer(delay, callback);
+    DebounceTimer.debounce('helpers_debounce', callback, delay: delay);
   }
 
   // Get initials from name
@@ -273,15 +283,15 @@ class Helpers {
   }
 }
 
-// Custom Timer class for debounce
-class Timer {
-  static final Map<String, Timer> _timers = {};
+// Custom DebounceTimer class for debounce functionality
+class DebounceTimer {
+  static final Map<String, DebounceTimer> _timers = {};
 
   final String _id;
   final Duration _delay;
   final Function() _callback;
 
-  Timer._(this._id, this._delay, this._callback) {
+  DebounceTimer._(this._id, this._delay, this._callback) {
     Future.delayed(_delay, () {
       _timers.remove(_id);
       _callback();
@@ -294,7 +304,7 @@ class Timer {
     Duration delay = const Duration(milliseconds: 300),
   }) {
     _timers[id]?.cancel();
-    _timers[id] = Timer._(id, delay, callback);
+    _timers[id] = DebounceTimer._(id, delay, callback);
   }
 
   void cancel() {

@@ -1,12 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
-import 'package:autocare_pro/config/routes.dart';
 import 'package:autocare_pro/core/utils/helpers.dart';
 import 'package:autocare_pro/presentation/providers/vehicle_provider.dart';
 import 'package:autocare_pro/presentation/providers/service_provider.dart';
 import 'package:autocare_pro/presentation/widgets/dashboard_card.dart';
 import 'package:autocare_pro/presentation/widgets/recent_services_card.dart';
 import 'package:autocare_pro/presentation/widgets/upcoming_services_card.dart';
+
+// Route constants
+class Routes {
+  static const String dashboard = '/';
+  static const String vehicleList = '/vehicles';
+  static const String vehicleDetails = '/vehicle-details';
+  static const String addVehicle = '/add-vehicle';
+  static const String addService = '/add-service';
+  static const String serviceList = '/service-list';
+  static const String serviceDetails = '/service-details';
+  static const String analytics = '/analytics';
+  static const String settings = '/settings';
+  static const String search = '/search';
+}
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -23,12 +37,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _loadData() async {
+    await Future.delayed(Duration.zero); // Ensure context is available
+    if (!mounted) return;
+
     final vehicleProvider = context.read<VehicleProvider>();
     final serviceProvider = context.read<ServiceProvider>();
 
-    await vehicleProvider.loadVehicles();
-    await serviceProvider.loadAllActiveSchedules();
-    await serviceProvider.loadAllServices();
+    try {
+      await vehicleProvider.loadVehicles();
+      await serviceProvider.loadAllActiveSchedules();
+      await serviceProvider.loadAllServices();
+    } catch (e) {
+      // Handle any loading errors gracefully
+      debugPrint('Error loading dashboard data: $e');
+    }
   }
 
   @override
@@ -38,8 +60,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
         title: const Text('Dashboard'),
         actions: [
           IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: () => Navigator.pushNamed(context, Routes.search),
+            tooltip: 'Search',
+          ),
+          IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () => Navigator.pushNamed(context, Routes.settings),
+            tooltip: 'Settings',
           ),
         ],
       ),

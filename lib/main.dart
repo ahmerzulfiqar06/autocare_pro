@@ -1,31 +1,85 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-// import 'package:autocare_pro/config/routes.dart';
 import 'package:autocare_pro/core/theme/app_theme.dart';
 import 'package:autocare_pro/data/repositories/vehicle_repository.dart';
 import 'package:autocare_pro/data/repositories/service_repository.dart';
 import 'package:autocare_pro/data/services/database_service.dart';
+import 'package:autocare_pro/data/services/camera_service.dart';
 import 'package:autocare_pro/presentation/providers/app_provider.dart';
 import 'package:autocare_pro/presentation/providers/vehicle_provider.dart';
 import 'package:autocare_pro/presentation/providers/service_provider.dart';
+import 'package:autocare_pro/presentation/screens/dashboard_screen.dart';
+import 'package:autocare_pro/presentation/screens/vehicle_list_screen.dart';
+import 'package:autocare_pro/presentation/screens/vehicle_details_screen.dart';
+import 'package:autocare_pro/presentation/screens/add_vehicle_screen.dart';
+import 'package:autocare_pro/presentation/screens/service_list_screen.dart';
+import 'package:autocare_pro/presentation/screens/add_service_screen.dart';
+import 'package:autocare_pro/presentation/screens/service_details_screen.dart';
+import 'package:autocare_pro/presentation/screens/analytics_screen.dart';
+import 'package:autocare_pro/presentation/screens/settings_screen.dart';
+import 'package:autocare_pro/presentation/screens/splash_screen.dart';
+import 'package:autocare_pro/presentation/screens/search_screen.dart';
 
-// Temporary Routes class
+// Route constants
 class Routes {
+  static const String splash = '/splash';
   static const String dashboard = '/';
   static const String vehicleList = '/vehicles';
   static const String vehicleDetails = '/vehicle-details';
   static const String addVehicle = '/add-vehicle';
-
-  static Map<String, WidgetBuilder> getRoutes() {
-    return {
-      dashboard: (context) => const _PlaceholderScreen('Dashboard'),
-      vehicleList: (context) => const _PlaceholderScreen('Vehicle List'),
-      vehicleDetails: (context) => const _PlaceholderScreen('Vehicle Details'),
-      addVehicle: (context) => const _PlaceholderScreen('Add Vehicle'),
-    };
-  }
+  static const String addService = '/add-service';
+  static const String serviceList = '/service-list';
+  static const String serviceDetails = '/service-details';
+  static const String analytics = '/analytics';
+  static const String settings = '/settings';
+  static const String search = '/search';
 }
 
+// Route definitions
+Map<String, WidgetBuilder> _getRoutes() {
+  return {
+    Routes.splash: (context) => const SplashScreen(),
+    Routes.dashboard: (context) => const DashboardScreen(),
+    Routes.vehicleList: (context) => const VehicleListScreen(),
+    Routes.vehicleDetails: (context) {
+      final vehicleId = ModalRoute.of(context)?.settings.arguments as String?;
+      if (vehicleId != null) {
+        return VehicleDetailsScreen(vehicleId: vehicleId);
+      }
+      return const Scaffold(
+        body: Center(child: Text('Vehicle ID not provided')),
+      );
+    },
+    Routes.addVehicle: (context) => const AddVehicleScreen(),
+    Routes.addService: (context) {
+      final vehicleId = ModalRoute.of(context)?.settings.arguments as String?;
+      return AddServiceScreen(vehicleId: vehicleId);
+    },
+    Routes.serviceList: (context) {
+      final vehicleId = ModalRoute.of(context)?.settings.arguments as String?;
+      if (vehicleId != null) {
+        return ServiceListScreen(vehicleId: vehicleId);
+      }
+      return const Scaffold(
+        body: Center(child: Text('Vehicle ID not provided')),
+      );
+    },
+    Routes.serviceDetails: (context) {
+      final serviceId = ModalRoute.of(context)?.settings.arguments as String?;
+      if (serviceId != null) {
+        return ServiceDetailsScreen(serviceId: serviceId);
+      }
+      return const Scaffold(
+        body: Center(child: Text('Service ID not provided')),
+      );
+    },
+    Routes.analytics: (context) => const AnalyticsScreen(),
+    Routes.settings: (context) => const SettingsScreen(),
+    Routes.search: (context) => const SearchScreen(),
+  };
+}
+
+// Temporary placeholder screen for development
 class _PlaceholderScreen extends StatelessWidget {
   const _PlaceholderScreen(this.title);
   final String title;
@@ -52,6 +106,7 @@ void main() async {
   final databaseService = DatabaseService();
   final vehicleRepository = VehicleRepository(databaseService);
   final serviceRepository = ServiceRepository(databaseService);
+  final cameraService = CameraService();
 
   // Initialize app provider
   final appProvider = AppProvider();
@@ -64,6 +119,7 @@ void main() async {
         Provider.value(value: databaseService),
         Provider.value(value: vehicleRepository),
         Provider.value(value: serviceRepository),
+        Provider.value(value: cameraService),
         ChangeNotifierProvider(
           create: (context) => VehicleProvider(vehicleRepository),
         ),
@@ -89,8 +145,8 @@ class AutoCareProApp extends StatelessWidget {
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,
           themeMode: appProvider.themeMode,
-          initialRoute: Routes.dashboard,
-          routes: Routes.getRoutes(),
+          initialRoute: Routes.splash,
+          routes: _getRoutes(),
           builder: (context, child) {
             return MediaQuery(
               data: MediaQuery.of(context).copyWith(

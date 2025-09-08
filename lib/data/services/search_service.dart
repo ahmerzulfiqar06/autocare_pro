@@ -1,0 +1,463 @@
+import 'package:autocare_pro/data/models/vehicle.dart';
+import 'package:autocare_pro/data/models/service.dart';
+import 'package:autocare_pro/data/models/service_schedule.dart';
+
+enum SearchFilter {
+  all('All'),
+  vehicles('Vehicles'),
+  services('Services'),
+  schedules('Schedules');
+
+  const SearchFilter(this.displayName);
+  final String displayName;
+}
+
+enum SortOption {
+  relevance('Relevance'),
+  dateNewest('Newest First'),
+  dateOldest('Oldest First'),
+  nameAZ('Name A-Z'),
+  nameZA('Name Z-A'),
+  costHigh('Cost High-Low'),
+  costLow('Cost Low-High');
+
+  const SortOption(this.displayName);
+  final String displayName;
+}
+
+class SearchResult {
+  final String id;
+  final String title;
+  final String subtitle;
+  final String type; // 'vehicle', 'service', 'schedule'
+  final String? description;
+  final DateTime? date;
+  final double? cost;
+  final int? mileage;
+  final String? imageUrl;
+  final Map<String, dynamic> metadata;
+
+  SearchResult({
+    required this.id,
+    required this.title,
+    required this.subtitle,
+    required this.type,
+    this.description,
+    this.date,
+    this.cost,
+    this.mileage,
+    this.imageUrl,
+    this.metadata = const {},
+  });
+
+  @override
+  String toString() => '$type: $title - $subtitle';
+}
+
+class SearchService {
+  static final SearchService _instance = SearchService._internal();
+  factory SearchService() => _instance;
+  SearchService._internal();
+
+  // Search history
+  final List<String> _searchHistory = [];
+  static const int _maxHistorySize = 10;
+
+  // Perform global search
+  List<SearchResult> search({
+    required String query,
+    required List<Vehicle> vehicles,
+    required List<Service> services,
+    required List<ServiceSchedule> schedules,
+    SearchFilter filter = SearchFilter.all,
+    SortOption sortBy = SortOption.relevance,
+  }) {
+    if (query.trim().isEmpty) {
+      return _getDefaultResults(vehicles, services, schedules, filter, sortBy);
+    }
+
+    final results = <SearchResult>[];
+
+    // Add to search history
+    _addToSearchHistory(query);
+
+    final searchTerm = query.toLowerCase().trim();
+
+    // Search vehicles
+    if (filter == SearchFilter.all || filter == SearchFilter.vehicles) {
+      for (final vehicle in vehicles) {
+        if (_matchesVehicle(vehicle, searchTerm)) {
+          results.add(SearchResult(
+            id: vehicle.id,
+            title: '${vehicle.year} ${vehicle.make} ${vehicle.model}',
+            subtitle: 'Vehicle',
+            type: 'vehicle',
+            description: vehicle.licensePlate ?? 'No license plate',
+            date: vehicle.createdAt,
+            imageUrl: vehicle.photoPath,
+            metadata: {
+              'make': vehicle.make,
+              'model': vehicle.model,
+              'year': vehicle.year,
+              'mileage': vehicle.currentMileage,
+              'vin': vehicle.vin,
+              'status': vehicle.status.displayName,
+            },
+          ));
+        }
+      }
+    }
+
+    // Search services
+    if (filter == SearchFilter.all || filter == SearchFilter.services) {
+      for (final service in services) {
+        if (_matchesService(service, searchTerm, vehicles)) {
+          final vehicle = vehicles.firstWhere(
+            (v) => v.id == service.vehicleId,
+            orElse: () => Vehicle(
+              make: 'Unknown',
+              model: 'Vehicle',
+              year: 2020,
+              currentMileage: 0,
+            ),
+          );
+
+          results.add(SearchResult(
+            id: service.id,
+            title: service.serviceType.displayName,
+            subtitle: '${vehicle.year} ${vehicle.make} ${vehicle.model}',
+            type: 'service',
+            description: service.notes ?? 'No description',
+            date: service.serviceDate,
+            cost: service.cost,
+            mileage: service.mileageAtService,
+            metadata: {
+              'serviceType': service.serviceType.name,
+              'mechanic': service.mechanicInfo,
+              'receipt': service.receiptPath,
+              'vehicleId': service.vehicleId,
+            },
+          ));
+        }
+      }
+    }
+
+    // Search schedules
+    if (filter == SearchFilter.all || filter == SearchFilter.schedules) {
+      for (final schedule in schedules) {
+        if (_matchesSchedule(schedule, searchTerm, vehicles)) {
+          final vehicle = vehicles.firstWhere(
+            (v) => v.id == schedule.vehicleId,
+            orElse: () => Vehicle(
+              make: 'Unknown',
+              model: 'Vehicle',
+              year: 2020,
+              currentMileage: 0,
+            ),
+          );
+
+          results.add(SearchResult(
+            id: schedule.id,
+            title: schedule.serviceName,
+            subtitle: '${vehicle.year} ${vehicle.make} ${vehicle.model}',
+            type: 'schedule',
+            description: schedule.description,
+            date: schedule.nextServiceDate,
+            metadata: {
+              'frequency': schedule.frequency.displayName,
+              'isActive': schedule.isActive,
+              'isDue': schedule.isDue,
+              'daysUntilDue': schedule.daysUntilDue,
+              'vehicleId': schedule.vehicleId,
+            },
+          ));
+        }
+      }
+    }
+
+    // Sort results
+    results.sort((a, b) => _compareResults(a, b, sortBy));
+
+    return results;
+  }
+
+  bool _matchesVehicle(Vehicle vehicle, String searchTerm) {
+    return vehicle.make.toLowerCase().contains(searchTerm) ||
+           vehicle.model.toLowerCase().contains(searchTerm) ||
+           vehicle.year.toString().contains(searchTerm) ||
+           (vehicle.licensePlate?.toLowerCase().contains(searchTerm) ?? false) ||
+           (vehicle.vin?.toLowerCase().contains(searchTerm) ?? false) ||
+           (vehicle.notes?.toLowerCase().contains(searchTerm) ?? false);
+  }
+
+  bool _matchesService(Service service, String searchTerm, List<Vehicle> vehicles) {
+    // Search in service details
+    if (service.serviceType.displayName.toLowerCase().contains(searchTerm) ||
+        (service.notes?.toLowerCase().contains(searchTerm) ?? false) ||
+        (service.mechanicInfo?.toLowerCase().contains(searchTerm) ?? false)) {
+      return true;
+    }
+
+    // Search in associated vehicle
+    final vehicle = vehicles.firstWhere(
+      (v) => v.id == service.vehicleId,
+      orElse: () => Vehicle(make: '', model: '', year: 0, currentMileage: 0),
+    );
+
+    return vehicle.make.toLowerCase().contains(searchTerm) ||
+           vehicle.model.toLowerCase().contains(searchTerm) ||
+           vehicle.year.toString().contains(searchTerm);
+  }
+
+  bool _matchesSchedule(ServiceSchedule schedule, String searchTerm, List<Vehicle> vehicles) {
+    // Search in schedule details
+    if (schedule.serviceName.toLowerCase().contains(searchTerm) ||
+        schedule.description.toLowerCase().contains(searchTerm) ||
+        (schedule.notes?.toLowerCase().contains(searchTerm) ?? false)) {
+      return true;
+    }
+
+    // Search in associated vehicle
+    final vehicle = vehicles.firstWhere(
+      (v) => v.id == schedule.vehicleId,
+      orElse: () => Vehicle(make: '', model: '', year: 0, currentMileage: 0),
+    );
+
+    return vehicle.make.toLowerCase().contains(searchTerm) ||
+           vehicle.model.toLowerCase().contains(searchTerm) ||
+           vehicle.year.toString().contains(searchTerm);
+  }
+
+  int _compareResults(SearchResult a, SearchResult b, SortOption sortBy) {
+    switch (sortBy) {
+      case SortOption.relevance:
+        // For now, sort by type priority: vehicles > services > schedules
+        final typePriority = {'vehicle': 3, 'service': 2, 'schedule': 1};
+        final aPriority = typePriority[a.type] ?? 0;
+        final bPriority = typePriority[b.type] ?? 0;
+        return bPriority.compareTo(aPriority);
+
+      case SortOption.dateNewest:
+        final aDate = a.date ?? DateTime(2000);
+        final bDate = b.date ?? DateTime(2000);
+        return bDate.compareTo(aDate);
+
+      case SortOption.dateOldest:
+        final aDate = a.date ?? DateTime(2100);
+        final bDate = b.date ?? DateTime(2100);
+        return aDate.compareTo(bDate);
+
+      case SortOption.nameAZ:
+        return a.title.compareTo(b.title);
+
+      case SortOption.nameZA:
+        return b.title.compareTo(a.title);
+
+      case SortOption.costHigh:
+        final aCost = a.cost ?? 0.0;
+        final bCost = b.cost ?? 0.0;
+        return bCost.compareTo(aCost);
+
+      case SortOption.costLow:
+        final aCost = a.cost ?? double.maxFinite;
+        final bCost = b.cost ?? double.maxFinite;
+        return aCost.compareTo(bCost);
+    }
+  }
+
+  List<SearchResult> _getDefaultResults(
+    List<Vehicle> vehicles,
+    List<Service> services,
+    List<ServiceSchedule> schedules,
+    SearchFilter filter,
+    SortOption sortBy,
+  ) {
+    // Return recent items when no search query
+    final results = <SearchResult>[];
+
+    // Add recent vehicles
+    if (filter == SearchFilter.all || filter == SearchFilter.vehicles) {
+      final recentVehicles = vehicles.take(5);
+      for (final vehicle in recentVehicles) {
+        results.add(SearchResult(
+          id: vehicle.id,
+          title: '${vehicle.year} ${vehicle.make} ${vehicle.model}',
+          subtitle: 'Recent Vehicle',
+          type: 'vehicle',
+          description: vehicle.licensePlate ?? 'No license plate',
+          date: vehicle.createdAt,
+          imageUrl: vehicle.photoPath,
+        ));
+      }
+    }
+
+    // Add recent services
+    if (filter == SearchFilter.all || filter == SearchFilter.services) {
+      final recentServices = services.take(5);
+      for (final service in recentServices) {
+        final vehicle = vehicles.firstWhere(
+          (v) => v.id == service.vehicleId,
+          orElse: () => Vehicle(make: 'Unknown', model: 'Vehicle', year: 2020, currentMileage: 0),
+        );
+
+        results.add(SearchResult(
+          id: service.id,
+          title: service.serviceType.displayName,
+          subtitle: '${vehicle.year} ${vehicle.make} ${vehicle.model}',
+          type: 'service',
+          description: service.notes ?? 'No description',
+          date: service.serviceDate,
+          cost: service.cost,
+        ));
+      }
+    }
+
+    return results.take(10).toList(); // Limit to 10 results
+  }
+
+  // Search history management
+  void _addToSearchHistory(String query) {
+    if (query.trim().isEmpty) return;
+
+    _searchHistory.remove(query); // Remove if already exists
+    _searchHistory.insert(0, query); // Add to beginning
+
+    // Keep only the most recent searches
+    if (_searchHistory.length > _maxHistorySize) {
+      _searchHistory.removeRange(_maxHistorySize, _searchHistory.length);
+    }
+  }
+
+  List<String> getSearchHistory() => List.unmodifiable(_searchHistory);
+
+  void clearSearchHistory() => _searchHistory.clear();
+
+  void removeFromSearchHistory(String query) => _searchHistory.remove(query);
+
+  // Quick filters
+  List<SearchResult> getVehiclesByStatus(List<Vehicle> vehicles, String status) {
+    final filteredVehicles = vehicles.where((vehicle) =>
+      vehicle.status.displayName.toLowerCase() == status.toLowerCase()
+    );
+
+    return filteredVehicles.map((vehicle) => SearchResult(
+      id: vehicle.id,
+      title: '${vehicle.year} ${vehicle.make} ${vehicle.model}',
+      subtitle: 'Status: ${vehicle.status.displayName}',
+      type: 'vehicle',
+      description: vehicle.licensePlate ?? 'No license plate',
+      date: vehicle.createdAt,
+      imageUrl: vehicle.photoPath,
+    )).toList();
+  }
+
+  List<SearchResult> getServicesByType(List<Service> services, List<Vehicle> vehicles, String serviceType) {
+    final filteredServices = services.where((service) =>
+      service.serviceType.displayName.toLowerCase().contains(serviceType.toLowerCase())
+    );
+
+    return filteredServices.map((service) {
+      final vehicle = vehicles.firstWhere(
+        (v) => v.id == service.vehicleId,
+        orElse: () => Vehicle(make: 'Unknown', model: 'Vehicle', year: 2020, currentMileage: 0),
+      );
+
+      return SearchResult(
+        id: service.id,
+        title: service.serviceType.displayName,
+        subtitle: '${vehicle.year} ${vehicle.make} ${vehicle.model}',
+        type: 'service',
+        description: service.notes ?? 'No description',
+        date: service.serviceDate,
+        cost: service.cost,
+      );
+    }).toList();
+  }
+
+  List<SearchResult> getDueSchedules(List<ServiceSchedule> schedules, List<Vehicle> vehicles) {
+    final dueSchedules = schedules.where((schedule) => schedule.isDue);
+
+    return dueSchedules.map((schedule) {
+      final vehicle = vehicles.firstWhere(
+        (v) => v.id == schedule.vehicleId,
+        orElse: () => Vehicle(make: 'Unknown', model: 'Vehicle', year: 2020, currentMileage: 0),
+      );
+
+      return SearchResult(
+        id: schedule.id,
+        title: schedule.serviceName,
+        subtitle: '${vehicle.year} ${vehicle.make} ${vehicle.model}',
+        type: 'schedule',
+        description: schedule.description,
+        date: schedule.nextServiceDate,
+        metadata: {
+          'isDue': true,
+          'daysUntilDue': schedule.daysUntilDue,
+        },
+      );
+    }).toList();
+  }
+
+  // Advanced filtering
+  List<SearchResult> filterByDateRange({
+    required List<Vehicle> vehicles,
+    required List<Service> services,
+    required DateTime startDate,
+    required DateTime endDate,
+  }) {
+    final results = <SearchResult>[];
+
+    // Filter services by date range
+    final filteredServices = services.where((service) {
+      return service.serviceDate.isAfter(startDate) &&
+             service.serviceDate.isBefore(endDate);
+    });
+
+    for (final service in filteredServices) {
+      final vehicle = vehicles.firstWhere(
+        (v) => v.id == service.vehicleId,
+        orElse: () => Vehicle(make: 'Unknown', model: 'Vehicle', year: 2020, currentMileage: 0),
+      );
+
+      results.add(SearchResult(
+        id: service.id,
+        title: service.serviceType.displayName,
+        subtitle: '${vehicle.year} ${vehicle.make} ${vehicle.model}',
+        type: 'service',
+        description: 'Date: ${service.serviceDate.toLocal()}',
+        date: service.serviceDate,
+        cost: service.cost,
+      ));
+    }
+
+    return results;
+  }
+
+  List<SearchResult> filterByCostRange({
+    required List<Service> services,
+    required List<Vehicle> vehicles,
+    required double minCost,
+    required double maxCost,
+  }) {
+    final filteredServices = services.where((service) {
+      return service.cost >= minCost && service.cost <= maxCost;
+    });
+
+    return filteredServices.map((service) {
+      final vehicle = vehicles.firstWhere(
+        (v) => v.id == service.vehicleId,
+        orElse: () => Vehicle(make: 'Unknown', model: 'Vehicle', year: 2020, currentMileage: 0),
+      );
+
+      return SearchResult(
+        id: service.id,
+        title: service.serviceType.displayName,
+        subtitle: '${vehicle.year} ${vehicle.make} ${vehicle.model}',
+        type: 'service',
+        description: '\$${service.cost.toStringAsFixed(2)}',
+        date: service.serviceDate,
+        cost: service.cost,
+      );
+    }).toList();
+  }
+}

@@ -1,9 +1,24 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:autocare_pro/core/utils/helpers.dart';
 import 'package:autocare_pro/data/models/vehicle.dart';
+import 'package:autocare_pro/data/services/camera_service.dart';
 import 'package:autocare_pro/presentation/providers/vehicle_provider.dart';
+
+// Route constants
+class Routes {
+  static const String dashboard = '/';
+  static const String vehicleList = '/vehicles';
+  static const String vehicleDetails = '/vehicle-details';
+  static const String addVehicle = '/add-vehicle';
+  static const String addService = '/add-service';
+  static const String serviceList = '/service-list';
+  static const String serviceDetails = '/service-details';
+  static const String analytics = '/analytics';
+  static const String settings = '/settings';
+}
 
 class VehicleDetailsScreen extends StatefulWidget {
   final String vehicleId;
@@ -249,6 +264,94 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
     );
   }
 
+  Widget _buildQuickActions() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Quick Actions',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _buildActionButton(
+                  icon: Icons.build,
+                  label: 'Add Service',
+                  onTap: () => Navigator.pushNamed(
+                    context,
+                    Routes.addService,
+                    arguments: widget.vehicleId,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildActionButton(
+                  icon: Icons.history,
+                  label: 'Service History',
+                  onTap: () => Navigator.pushNamed(
+                    context,
+                    Routes.serviceList,
+                    arguments: widget.vehicleId,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          children: [
+            Icon(
+              icon,
+              size: 24,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.w500,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildViewMode() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -257,6 +360,10 @@ class _VehicleDetailsScreenState extends State<VehicleDetailsScreen> {
         children: [
           // Vehicle Photo
           _buildPhotoSection(),
+          const SizedBox(height: 24),
+
+          // Quick Actions
+          _buildQuickActions(),
           const SizedBox(height: 24),
 
           // Basic Information

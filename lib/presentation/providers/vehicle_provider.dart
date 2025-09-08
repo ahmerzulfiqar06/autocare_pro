@@ -172,6 +172,13 @@ class VehicleProvider extends ChangeNotifier {
         .where((vehicle) => vehicle.createdAt.isAfter(thirtyDaysAgo))
         .toList();
   }
+
+  // Clear all data
+  Future<void> clearAllData() async {
+    _vehicles.clear();
+    _error = null;
+    notifyListeners();
+  }
 }
 
 // Extension for firstOrNull

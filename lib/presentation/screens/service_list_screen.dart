@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:autocare_pro/core/utils/helpers.dart';
-import 'package:autocare_pro/data/models/vehicle.dart';
-import 'package:autocare_pro/presentation/providers/vehicle_provider.dart';
-import 'package:autocare_pro/presentation/widgets/vehicle_card.dart';
+import 'package:autocare_pro/data/models/service.dart';
+import 'package:autocare_pro/presentation/providers/service_provider.dart';
+import 'package:autocare_pro/presentation/widgets/service_card.dart';
 
 // Route constants
 class Routes {
@@ -18,22 +18,25 @@ class Routes {
   static const String settings = '/settings';
 }
 
-class VehicleListScreen extends StatefulWidget {
-  const VehicleListScreen({super.key});
+class ServiceListScreen extends StatefulWidget {
+  final String vehicleId;
+
+  const ServiceListScreen({super.key, required this.vehicleId});
 
   @override
-  State<VehicleListScreen> createState() => _VehicleListScreenState();
+  State<ServiceListScreen> createState() => _ServiceListScreenState();
 }
 
-class _VehicleListScreenState extends State<VehicleListScreen> {
+class _ServiceListScreenState extends State<ServiceListScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  bool _isGridView = true;
+  String _selectedFilter = 'All';
+  bool _sortByDate = true;
 
   @override
   void initState() {
     super.initState();
-    _loadVehicles();
+    _loadServices();
   }
 
   @override
@@ -42,8 +45,8 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
     super.dispose();
   }
 
-  Future<void> _loadVehicles() async {
-    await context.read<VehicleProvider>().loadVehicles();
+  Future<void> _loadServices() async {
+    await context.read<ServiceProvider>().loadServicesForVehicle(widget.vehicleId);
   }
 
   void _onSearchChanged(String query) {
@@ -52,21 +55,27 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
     });
   }
 
-  void _toggleView() {
+  void _onFilterChanged(String filter) {
     setState(() {
-      _isGridView = !_isGridView;
+      _selectedFilter = filter;
     });
   }
 
-  void _navigateToAddVehicle() {
-    Navigator.pushNamed(context, Routes.addVehicle);
+  void _toggleSort() {
+    setState(() {
+      _sortByDate = !_sortByDate;
+    });
   }
 
-  void _navigateToVehicleDetails(String vehicleId) {
+  void _navigateToAddService() {
+    Navigator.pushNamed(context, Routes.addService, arguments: widget.vehicleId);
+  }
+
+  void _navigateToServiceDetails(String serviceId) {
     Navigator.pushNamed(
       context,
-      Routes.vehicleDetails,
-      arguments: vehicleId,
+      Routes.serviceDetails,
+      arguments: serviceId,
     );
   }
 
@@ -74,12 +83,26 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Vehicles'),
+        title: const Text('Service History'),
         actions: [
           IconButton(
-            icon: Icon(_isGridView ? Icons.list : Icons.grid_view),
-            onPressed: _toggleView,
-            tooltip: _isGridView ? 'List view' : 'Grid view',
+            icon: Icon(_sortByDate ? Icons.calendar_today : Icons.attach_money),
+            onPressed: _toggleSort,
+            tooltip: _sortByDate ? 'Sort by date' : 'Sort by cost',
+          ),
+          PopupMenuButton<String>(
+            onSelected: _onFilterChanged,
+            itemBuilder: (context) => [
+              const PopupMenuItem(value: 'All', child: Text('All Services')),
+              const PopupMenuItem(value: 'Oil Change', child: Text('Oil Changes')),
+              const PopupMenuItem(value: 'Brake Service', child: Text('Brake Services')),
+              const PopupMenuItem(value: 'Tire Rotation', child: Text('Tire Rotations')),
+              const PopupMenuItem(value: 'Inspection', child: Text('Inspections')),
+            ],
+            child: const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 8),
+              child: Icon(Icons.filter_list),
+            ),
           ),
         ],
         bottom: PreferredSize(
@@ -90,7 +113,7 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
               controller: _searchController,
               onChanged: _onSearchChanged,
               decoration: InputDecoration(
-                hintText: 'Search vehicles...',
+                hintText: 'Search services...',
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: _searchQuery.isNotEmpty
                     ? IconButton(
@@ -113,13 +136,13 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
           ),
         ),
       ),
-      body: Consumer<VehicleProvider>(
-        builder: (context, vehicleProvider, child) {
-          if (vehicleProvider.isLoading) {
+      body: Consumer<ServiceProvider>(
+        builder: (context, serviceProvider, child) {
+          if (serviceProvider.isLoading) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          if (vehicleProvider.error != null) {
+          if (serviceProvider.error != null) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -127,18 +150,18 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
                   const Icon(Icons.error_outline, size: 64, color: Colors.red),
                   const SizedBox(height: 16),
                   Text(
-                    'Error loading vehicles',
+                    'Error loading services',
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    vehicleProvider.error!,
+                    serviceProvider.error!,
                     style: Theme.of(context).textTheme.bodyMedium,
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton(
-                    onPressed: _loadVehicles,
+                    onPressed: _loadServices,
                     child: const Text('Retry'),
                   ),
                 ],
@@ -146,28 +169,50 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
             );
           }
 
-          final vehicles = _searchQuery.isEmpty
-              ? vehicleProvider.vehicles
-              : vehicleProvider.searchVehicles(_searchQuery);
+          final allServices = serviceProvider.getServicesForVehicle(widget.vehicleId);
+          final filteredServices = _filterAndSortServices(allServices);
 
-          if (vehicles.isEmpty) {
+          if (filteredServices.isEmpty) {
             return _buildEmptyState();
           }
 
           return RefreshIndicator(
-            onRefresh: _loadVehicles,
-            child: _isGridView
-                ? _buildGridView(vehicles)
-                : _buildListView(vehicles),
+            onRefresh: _loadServices,
+            child: _buildServiceList(filteredServices),
           );
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _navigateToAddVehicle,
-        tooltip: 'Add Vehicle',
+        onPressed: _navigateToAddService,
+        tooltip: 'Add Service',
         child: const Icon(Icons.add),
       ),
     );
+  }
+
+  List<Service> _filterAndSortServices(List<Service> services) {
+    // Filter by search query
+    var filtered = services.where((service) {
+      if (_searchQuery.isEmpty) return true;
+      return service.serviceType.displayName
+              .toLowerCase()
+              .contains(_searchQuery.toLowerCase()) ||
+          service.notes?.toLowerCase().contains(_searchQuery.toLowerCase()) == true;
+    }).toList();
+
+    // Filter by type
+    if (_selectedFilter != 'All') {
+      filtered = filtered.where((service) => service.serviceType.displayName == _selectedFilter).toList();
+    }
+
+    // Sort
+    if (_sortByDate) {
+      filtered.sort((a, b) => b.serviceDate.compareTo(a.serviceDate));
+    } else {
+      filtered.sort((a, b) => b.cost.compareTo(a.cost));
+    }
+
+    return filtered;
   }
 
   Widget _buildEmptyState() {
@@ -176,35 +221,35 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            Icons.directions_car_outlined,
+            Icons.build_outlined,
             size: 80,
             color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
           ),
           const SizedBox(height: 24),
           Text(
-            _searchQuery.isEmpty
-                ? 'No vehicles added yet'
-                : 'No vehicles found',
+            _searchQuery.isEmpty && _selectedFilter == 'All'
+                ? 'No services recorded yet'
+                : 'No services found',
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.w500,
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            _searchQuery.isEmpty
-                ? 'Add your first vehicle to get started'
-                : 'Try a different search term',
+            _searchQuery.isEmpty && _selectedFilter == 'All'
+                ? 'Add your first service to get started'
+                : 'Try adjusting your search or filter',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
             ),
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 24),
-          if (_searchQuery.isEmpty)
+          if (_searchQuery.isEmpty && _selectedFilter == 'All')
             ElevatedButton.icon(
-              onPressed: _navigateToAddVehicle,
+              onPressed: _navigateToAddService,
               icon: const Icon(Icons.add),
-              label: const Text('Add Vehicle'),
+              label: const Text('Add Service'),
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               ),
@@ -214,38 +259,15 @@ class _VehicleListScreenState extends State<VehicleListScreen> {
     );
   }
 
-  Widget _buildGridView(List<Vehicle> vehicles) {
-    return Padding(
-      padding: const EdgeInsets.all(8),
-      child: GridView.builder(
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          childAspectRatio: 0.8,
-          crossAxisSpacing: 8,
-          mainAxisSpacing: 8,
-        ),
-        itemCount: vehicles.length,
-        itemBuilder: (context, index) {
-          final vehicle = vehicles[index];
-          return VehicleCard(
-            vehicle: vehicle,
-            onTap: () => _navigateToVehicleDetails(vehicle.id),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildListView(List<Vehicle> vehicles) {
+  Widget _buildServiceList(List<Service> services) {
     return ListView.builder(
       padding: const EdgeInsets.all(8),
-      itemCount: vehicles.length,
+      itemCount: services.length,
       itemBuilder: (context, index) {
-        final vehicle = vehicles[index];
-        return VehicleCard(
-          vehicle: vehicle,
-          isListView: true,
-          onTap: () => _navigateToVehicleDetails(vehicle.id),
+        final service = services[index];
+        return ServiceCard(
+          service: service,
+          onTap: () => _navigateToServiceDetails(service.id),
         );
       },
     );

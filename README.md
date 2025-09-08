@@ -15,11 +15,7 @@ A professional, cross-platform Flutter mobile application for smart vehicle main
 
 ## ✨ Features
 
-### 🏢 Core Features
-- **Vehicle Management**: Add, edit, delete multiple vehicles with detailed specs
-- **Maintenance Scheduling**: Pre-defined and custom service schedules
-- **Service Records**: Digital receipt scanning with camera integration
-- **Analytics & Reports**: Cost trends, service frequency analysis
+### 🏢 Core Features service frequency analysis
 - **Dark/Light Theme**: Automatic theme switching with user preference
 - **Offline Functionality**: Full offline capability with data sync
 - **Data Backup & Restore**: Secure data export/import functionality

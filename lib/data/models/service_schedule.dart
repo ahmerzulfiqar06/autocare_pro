@@ -1,15 +1,53 @@
 import 'package:uuid/uuid.dart';
 
+enum ScheduleFrequency {
+  mileage('Mileage-based'),
+  monthly('Monthly'),
+  quarterly('Quarterly'),
+  semiAnnually('Semi-Annually'),
+  annually('Annually'),
+  custom('Custom');
+
+  const ScheduleFrequency(this.displayName);
+  final String displayName;
+}
+
+enum ScheduleServiceType {
+  oilChange('Oil Change'),
+  tireRotation('Tire Rotation'),
+  brakeService('Brake Service'),
+  transmissionService('Transmission Service'),
+  engineTuneUp('Engine Tune-up'),
+  airFilterReplacement('Air Filter Replacement'),
+  batteryReplacement('Battery Replacement'),
+  coolantFlush('Coolant Flush'),
+  inspection('Inspection'),
+  other('Other');
+
+  const ScheduleServiceType(this.displayName);
+  final String displayName;
+}
+
 class ServiceSchedule {
   final String id;
   final String vehicleId;
-  final String serviceType;
-  final int intervalMiles;
-  final int intervalMonths;
+  final String serviceName;
+  final String description;
+  final ScheduleServiceType serviceType;
+  final ScheduleFrequency frequency;
+
+  // For mileage-based schedules
+  final int? mileageInterval;
+  final int? intervalMiles;
+
+  // For time-based schedules
+  final int? monthsInterval;
+  final int? intervalMonths;
+
   final DateTime lastServiceDate;
-  final int lastServiceMileage;
+  final int? lastServiceMileage;
   final DateTime nextServiceDate;
-  final int nextServiceMileage;
+  final int? nextServiceMileage;
   final bool isActive;
   final String? notes;
   final DateTime createdAt;
@@ -18,13 +56,18 @@ class ServiceSchedule {
   ServiceSchedule({
     String? id,
     required this.vehicleId,
+    required this.serviceName,
+    required this.description,
     required this.serviceType,
-    required this.intervalMiles,
-    required this.intervalMonths,
+    required this.frequency,
+    this.mileageInterval,
+    this.intervalMiles,
+    this.monthsInterval,
+    this.intervalMonths,
     required this.lastServiceDate,
-    required this.lastServiceMileage,
+    this.lastServiceMileage,
     DateTime? nextServiceDate,
-    int? nextServiceMileage,
+    this.nextServiceMileage,
     this.isActive = true,
     this.notes,
     DateTime? createdAt,
@@ -32,28 +75,106 @@ class ServiceSchedule {
   }) :
     id = id ?? const Uuid().v4(),
     nextServiceDate = nextServiceDate ?? _calculateNextServiceDate(
+      frequency,
       lastServiceDate,
-      intervalMonths,
+      monthsInterval,
     ),
-    nextServiceMileage = nextServiceMileage ?? lastServiceMileage + intervalMiles,
     createdAt = createdAt ?? DateTime.now(),
     updatedAt = updatedAt ?? DateTime.now();
 
-  // Calculate next service date based on interval
-  static DateTime _calculateNextServiceDate(DateTime lastServiceDate, int intervalMonths) {
-    return DateTime(
-      lastServiceDate.year,
-      lastServiceDate.month + intervalMonths,
-      lastServiceDate.day,
-    );
+  // Calculate next service date based on frequency
+  static DateTime _calculateNextServiceDate(
+    ScheduleFrequency frequency,
+    DateTime lastServiceDate,
+    int? monthsInterval,
+  ) {
+    switch (frequency) {
+      case ScheduleFrequency.monthly:
+        return lastServiceDate.add(const Duration(days: 30));
+      case ScheduleFrequency.quarterly:
+        return lastServiceDate.add(const Duration(days: 90));
+      case ScheduleFrequency.semiAnnually:
+        return lastServiceDate.add(const Duration(days: 180));
+      case ScheduleFrequency.annually:
+        return lastServiceDate.add(const Duration(days: 365));
+      case ScheduleFrequency.custom:
+        if (monthsInterval != null) {
+          return lastServiceDate.add(Duration(days: monthsInterval * 30));
+        }
+        return lastServiceDate.add(const Duration(days: 90)); // Default to quarterly
+      default:
+        return lastServiceDate.add(const Duration(days: 90)); // Default to quarterly
+    }
+  }
+
+  // Calculate next service mileage
+  static int? _calculateNextServiceMileage(
+    ScheduleFrequency frequency,
+    int? lastServiceMileage,
+    int? mileageInterval,
+  ) {
+    if (frequency == ScheduleFrequency.mileage && mileageInterval != null && lastServiceMileage != null) {
+      return lastServiceMileage + mileageInterval;
+    }
+    return null;
+  }
+
+  // Check if service is due
+  bool get isDue {
+    final now = DateTime.now();
+    return nextServiceDate.isBefore(now) ||
+           (nextServiceMileage != null && nextServiceMileage! <= 0);
+  }
+
+  // Get days until next service
+  int get daysUntilDue {
+    final now = DateTime.now();
+    return nextServiceDate.difference(now).inDays;
+  }
+
+  // Get days until next service (alias for daysUntilDue)
+  int get daysUntilNextService => daysUntilDue;
+
+  // Get formatted next service date
+  String get formattedNextServiceDate {
+    return '${nextServiceDate.month}/${nextServiceDate.day}/${nextServiceDate.year}';
+  }
+
+  // Get status message
+  String get statusMessage {
+    if (!isActive) return 'Inactive';
+
+    if (isDue) {
+      return 'Overdue by ${-daysUntilDue} days';
+    } else if (daysUntilDue <= 7) {
+      return 'Due in $daysUntilDue days';
+    } else if (daysUntilDue <= 30) {
+      return 'Due in ${daysUntilDue} days';
+    } else {
+      return 'Next service: ${formattedNextServiceDate}';
+    }
+  }
+
+  // Get status color
+  String get statusColor {
+    if (!isActive) return 'grey';
+    if (isDue) return 'red';
+    if (daysUntilDue <= 7) return 'orange';
+    if (daysUntilDue <= 30) return 'yellow';
+    return 'green';
   }
 
   // Copy with method for immutability
   ServiceSchedule copyWith({
     String? id,
     String? vehicleId,
-    String? serviceType,
+    String? serviceName,
+    String? description,
+    ScheduleServiceType? serviceType,
+    ScheduleFrequency? frequency,
+    int? mileageInterval,
     int? intervalMiles,
+    int? monthsInterval,
     int? intervalMonths,
     DateTime? lastServiceDate,
     int? lastServiceMileage,
@@ -67,8 +188,13 @@ class ServiceSchedule {
     return ServiceSchedule(
       id: id ?? this.id,
       vehicleId: vehicleId ?? this.vehicleId,
+      serviceName: serviceName ?? this.serviceName,
+      description: description ?? this.description,
       serviceType: serviceType ?? this.serviceType,
+      frequency: frequency ?? this.frequency,
+      mileageInterval: mileageInterval ?? this.mileageInterval,
       intervalMiles: intervalMiles ?? this.intervalMiles,
+      monthsInterval: monthsInterval ?? this.monthsInterval,
       intervalMonths: intervalMonths ?? this.intervalMonths,
       lastServiceDate: lastServiceDate ?? this.lastServiceDate,
       lastServiceMileage: lastServiceMileage ?? this.lastServiceMileage,
@@ -85,18 +211,23 @@ class ServiceSchedule {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
-      'vehicle_id': vehicleId,
-      'service_type': serviceType,
-      'interval_miles': intervalMiles,
-      'interval_months': intervalMonths,
-      'last_service_date': lastServiceDate.toIso8601String(),
-      'last_service_mileage': lastServiceMileage,
-      'next_service_date': nextServiceDate.toIso8601String(),
-      'next_service_mileage': nextServiceMileage,
-      'is_active': isActive ? 1 : 0,
+      'vehicleId': vehicleId,
+      'serviceName': serviceName,
+      'description': description,
+      'serviceType': serviceType.name,
+      'frequency': frequency.name,
+      'mileageInterval': mileageInterval,
+      'intervalMiles': intervalMiles,
+      'monthsInterval': monthsInterval,
+      'intervalMonths': intervalMonths,
+      'lastServiceDate': lastServiceDate.toIso8601String(),
+      'lastServiceMileage': lastServiceMileage,
+      'nextServiceDate': nextServiceDate.toIso8601String(),
+      'nextServiceMileage': nextServiceMileage,
+      'isActive': isActive ? 1 : 0,
       'notes': notes,
-      'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt.toIso8601String(),
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
     };
   }
 
@@ -104,80 +235,35 @@ class ServiceSchedule {
   factory ServiceSchedule.fromMap(Map<String, dynamic> map) {
     return ServiceSchedule(
       id: map['id'] as String,
-      vehicleId: map['vehicle_id'] as String,
-      serviceType: map['service_type'] as String,
-      intervalMiles: map['interval_miles'] as int,
-      intervalMonths: map['interval_months'] as int,
-      lastServiceDate: DateTime.parse(map['last_service_date'] as String),
-      lastServiceMileage: map['last_service_mileage'] as int,
-      nextServiceDate: DateTime.parse(map['next_service_date'] as String),
-      nextServiceMileage: map['next_service_mileage'] as int,
-      isActive: (map['is_active'] as int) == 1,
+      vehicleId: map['vehicleId'] as String,
+      serviceName: map['serviceName'] as String,
+      description: map['description'] as String,
+      serviceType: ScheduleServiceType.values.firstWhere(
+        (s) => s.name == map['serviceType'],
+        orElse: () => ScheduleServiceType.other,
+      ),
+      frequency: ScheduleFrequency.values.firstWhere(
+        (f) => f.name == map['frequency'],
+        orElse: () => ScheduleFrequency.quarterly,
+      ),
+      mileageInterval: map['mileageInterval'] as int?,
+      intervalMiles: map['intervalMiles'] as int?,
+      monthsInterval: map['monthsInterval'] as int?,
+      intervalMonths: map['intervalMonths'] as int?,
+      lastServiceDate: DateTime.parse(map['lastServiceDate'] as String),
+      lastServiceMileage: map['lastServiceMileage'] as int?,
+      nextServiceDate: DateTime.parse(map['nextServiceDate'] as String),
+      nextServiceMileage: map['nextServiceMileage'] as int?,
+      isActive: (map['isActive'] as int?) == 1,
       notes: map['notes'] as String?,
-      createdAt: DateTime.parse(map['created_at'] as String),
-      updatedAt: DateTime.parse(map['updated_at'] as String),
+      createdAt: DateTime.parse(map['createdAt'] as String),
+      updatedAt: DateTime.parse(map['updatedAt'] as String),
     );
-  }
-
-  // Check if service is due based on current mileage and date
-  bool isServiceDue(int currentMileage, DateTime currentDate) {
-    final mileageDue = currentMileage >= nextServiceMileage;
-    final dateDue = currentDate.isAfter(nextServiceDate) ||
-                   currentDate.isAtSameMomentAs(nextServiceDate);
-
-    return mileageDue || dateDue;
-  }
-
-  // Get days until next service
-  int get daysUntilNextService {
-    final now = DateTime.now();
-    return nextServiceDate.difference(now).inDays;
-  }
-
-  // Get miles until next service
-  int get milesUntilNextService {
-    return nextServiceMileage - lastServiceMileage;
-  }
-
-  // Formatted next service date
-  String get formattedNextServiceDate {
-    final days = daysUntilNextService;
-    if (days < 0) {
-      return 'Overdue by ${days.abs()} days';
-    } else if (days == 0) {
-      return 'Due today';
-    } else if (days == 1) {
-      return 'Due tomorrow';
-    } else if (days < 7) {
-      return 'Due in $days days';
-    } else if (days < 30) {
-      final weeks = (days / 7).floor();
-      return 'Due in $weeks week${weeks == 1 ? '' : 's'}';
-    } else {
-      final months = (days / 30).floor();
-      return 'Due in $months month${months == 1 ? '' : 's'}';
-    }
-  }
-
-  // Formatted intervals
-  String get formattedIntervals {
-    final miles = intervalMiles.toString().replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (Match m) => '${m[1]},',
-    );
-
-    if (intervalMiles > 0 && intervalMonths > 0) {
-      return 'Every $miles miles or $intervalMonths months';
-    } else if (intervalMiles > 0) {
-      return 'Every $miles miles';
-    } else {
-      return 'Every $intervalMonths months';
-    }
   }
 
   @override
   String toString() {
-    return 'ServiceSchedule(id: $id, type: $serviceType, next: $nextServiceDate)';
+    return 'ServiceSchedule(id: $id, serviceName: $serviceName, nextServiceDate: $nextServiceDate)';
   }
 
   @override

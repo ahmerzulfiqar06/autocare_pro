@@ -1,8 +1,10 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:autocare_pro/core/utils/helpers.dart';
 import 'package:autocare_pro/data/models/vehicle.dart';
+import 'package:autocare_pro/data/services/camera_service.dart';
 import 'package:autocare_pro/presentation/providers/vehicle_provider.dart';
 
 class AddVehicleScreen extends StatefulWidget {
@@ -25,6 +27,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
   DateTime? _purchaseDate;
   VehicleStatus _status = VehicleStatus.active;
   bool _isLoading = false;
+  String? _photoPath;
 
   @override
   void dispose() {
@@ -52,6 +55,87 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
     }
   }
 
+  Future<void> _pickPhoto() async {
+    try {
+      final cameraService = context.read<CameraService>();
+      final String? photoPath = await showModalBottomSheet<String>(
+        context: context,
+        builder: (context) => _buildPhotoPickerSheet(cameraService),
+      );
+
+      if (photoPath != null) {
+        setState(() {
+          _photoPath = photoPath;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        Helpers.showErrorSnackBar(context, 'Failed to pick photo: ${e.toString()}');
+      }
+    }
+  }
+
+  Widget _buildPhotoPickerSheet(CameraService cameraService) {
+    return SafeArea(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.camera_alt),
+            title: const Text('Take Photo'),
+            onTap: () async {
+              Navigator.of(context).pop();
+              try {
+                final photoPath = await cameraService.takePhoto();
+                if (mounted && photoPath != null) {
+                  setState(() {
+                    _photoPath = photoPath;
+                  });
+                }
+              } catch (e) {
+                if (mounted) {
+                  Helpers.showErrorSnackBar(context, 'Failed to take photo: ${e.toString()}');
+                }
+              }
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.photo_library),
+            title: const Text('Choose from Gallery'),
+            onTap: () async {
+              Navigator.of(context).pop();
+              try {
+                final photoPath = await cameraService.pickFromGallery();
+                if (mounted && photoPath != null) {
+                  setState(() {
+                    _photoPath = photoPath;
+                  });
+                }
+              } catch (e) {
+                if (mounted) {
+                  Helpers.showErrorSnackBar(context, 'Failed to pick photo: ${e.toString()}');
+                }
+              }
+            },
+          ),
+          if (_photoPath != null) ...[
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.delete, color: Colors.red),
+              title: const Text('Remove Photo'),
+              onTap: () {
+                Navigator.of(context).pop();
+                setState(() {
+                  _photoPath = null;
+                });
+              },
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   Future<void> _saveVehicle() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -70,6 +154,7 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
             : _licensePlateController.text.trim(),
         currentMileage: int.parse(_mileageController.text),
         purchaseDate: _purchaseDate,
+        photoPath: _photoPath,
         status: _status,
         notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
       );
@@ -98,55 +183,86 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Add Vehicle'),
-        actions: [
-          TextButton(
-            onPressed: _isLoading ? null : _saveVehicle,
-            child: _isLoading
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Text('Save'),
-          ),
-        ],
       ),
       body: Form(
         key: _formKey,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Vehicle Photo Section
-              _buildPhotoSection(),
-              const SizedBox(height: 24),
+        child: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Vehicle Photo Section
+                    _buildPhotoSection(),
+                    const SizedBox(height: 24),
 
-              // Basic Information
-              Text(
-                'Basic Information',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
+                    // Basic Information
+                    Text(
+                      'Basic Information',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildBasicInfoSection(),
+
+                    const SizedBox(height: 24),
+
+                    // Additional Details
+                    Text(
+                      'Additional Details',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildAdditionalDetailsSection(),
+
+                    const SizedBox(height: 100), // Space for bottom button
+                  ],
                 ),
               ),
-              const SizedBox(height: 16),
-              _buildBasicInfoSection(),
-
-              const SizedBox(height: 24),
-
-              // Additional Details
-              Text(
-                'Additional Details',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
+            ),
+            // Bottom Save Button
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                border: Border(
+                  top: BorderSide(
+                    color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+                    width: 1,
+                  ),
                 ),
               ),
-              const SizedBox(height: 16),
-              _buildAdditionalDetailsSection(),
-
-              const SizedBox(height: 32),
-            ],
-          ),
+              child: SafeArea(
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _saveVehicle,
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 50),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: _isLoading
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text(
+                          'Save Vehicle',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -156,30 +272,41 @@ class _AddVehicleScreenState extends State<AddVehicleScreen> {
     return Center(
       child: Column(
         children: [
-          Container(
-            width: 120,
-            height: 120,
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-                width: 2,
+          GestureDetector(
+            onTap: _pickPhoto,
+            child: Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                  width: 2,
+                ),
+                image: _photoPath != null
+                    ? DecorationImage(
+                        image: FileImage(File(_photoPath!)),
+                        fit: BoxFit.cover,
+                      )
+                    : null,
               ),
-            ),
-            child: Icon(
-              Icons.directions_car,
-              size: 48,
-              color: Theme.of(context).colorScheme.primary,
+              child: _photoPath == null
+                  ? Icon(
+                      Icons.directions_car,
+                      size: 48,
+                      color: Theme.of(context).colorScheme.primary,
+                    )
+                  : null,
             ),
           ),
           const SizedBox(height: 12),
           TextButton.icon(
-            onPressed: () {
-              // TODO: Implement photo picker
-            },
-            icon: const Icon(Icons.camera_alt),
-            label: const Text('Add Photo'),
+            onPressed: _pickPhoto,
+            icon: Icon(
+              _photoPath != null ? Icons.edit : Icons.camera_alt,
+            ),
+            label: Text(_photoPath != null ? 'Change Photo' : 'Add Photo'),
           ),
         ],
       ),

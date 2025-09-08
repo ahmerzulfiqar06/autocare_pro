@@ -14,9 +14,11 @@ class ServiceProvider extends ChangeNotifier {
   String? _error;
 
   List<Service> get services => _services;
+  List<Service> get allServices => _services;
   List<ServiceSchedule> get serviceSchedules => _serviceSchedules;
   bool get isLoading => _isLoading;
   String? get error => _error;
+  int get totalServicesCount => _services.length;
 
   // Load services for a specific vehicle
   Future<void> loadServicesForVehicle(String vehicleId) async {
@@ -118,8 +120,17 @@ class ServiceProvider extends ChangeNotifier {
     }
   }
 
-  // Delete service
-  Future<bool> deleteService(String serviceId, String vehicleId) async {
+  // Delete service (single parameter version)
+  Future<bool> deleteService(String serviceId) async {
+    // Find the service to get the vehicle ID
+    final service = getServiceById(serviceId);
+    if (service == null) return false;
+
+    return deleteServiceWithVehicleId(serviceId, service.vehicleId);
+  }
+
+  // Delete service (with vehicle ID)
+  Future<bool> deleteServiceWithVehicleId(String serviceId, String vehicleId) async {
     _isLoading = true;
     _error = null;
     notifyListeners();
@@ -245,6 +256,28 @@ class ServiceProvider extends ChangeNotifier {
     } catch (e) {
       return null;
     }
+  }
+
+  // Get services for vehicle (alias for existing method)
+  List<Service> getServicesForVehicle(String vehicleId) {
+    return _services.where((service) => service.vehicleId == vehicleId).toList();
+  }
+
+  // Get services for vehicle (future version)
+  Future<List<Service>> getServicesForVehicleFuture(String vehicleId) async {
+    // Load services if not already loaded
+    if (_services.isEmpty) {
+      await loadServicesForVehicle(vehicleId);
+    }
+    return getServicesForVehicle(vehicleId);
+  }
+
+  // Clear all data
+  Future<void> clearAllData() async {
+    _services.clear();
+    _serviceSchedules.clear();
+    _error = null;
+    notifyListeners();
   }
 
   // Get schedule by ID

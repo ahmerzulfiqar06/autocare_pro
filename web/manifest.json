@@ -1,11 +1,11 @@
 {
-    "name": "autocare_pro",
-    "short_name": "autocare_pro",
+    "name": "AutoCare Pro - Smart Vehicle Maintenance Tracker",
+    "short_name": "AutoCare Pro",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#1976D2",
+    "theme_color": "#1976D2",
+    "description": "Smart Vehicle Maintenance Tracker - Keep track of your car maintenance, services, and expenses with AutoCare Pro.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

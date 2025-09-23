@@ -60,6 +60,12 @@ jobs:
           #   compileOptions { coreLibraryDesugaringEnabled true; sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
           #   dependencies { coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:2.0.4" }
           flutter build apk --release
+          
+      - name: Gradle assemble with stacktrace (diagnostic)
+        if: failure()
+        run: |
+          cd android
+          ./gradlew app:assembleRelease --no-daemon --stacktrace --info
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4

@@ -2,7 +2,7 @@ name: Android • Build & Distribute (Firebase)
 
 on:
   push:
-    branches: [ main ]   # change if your default branch is different
+    branches: [ main ]     # change if your default branch differs
   workflow_dispatch:
 
 jobs:
@@ -10,22 +10,25 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-java@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
 
-      - uses: subosito/flutter-action@v2
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
         with:
           channel: stable
-          flutter-version: '3.24.3
+          flutter-version: '3.24.3'   # 3.22+ needed for your theme API
 
-      - name: Flutter pub get
+      - name: Dependencies
         run: flutter pub get
 
-      # (Optional) Signing: only if you added keystore secrets
+      # ------- OPTIONAL: sign release (skip if you don't have a keystore yet) -------
       - name: Prepare keystore
         if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
         run: |
@@ -36,15 +39,17 @@ jobs:
           keyAlias=${{ secrets.KEY_ALIAS }}
           storeFile=keystore.jks
           EOF
+      # -----------------------------------------------------------------------------
 
-      - name: Build AAB
-        run: flutter build appbundle --release
+      # Use APK to avoid Play linking requirement (fastest for App Distribution)
+      - name: Build APK (release)
+        run: flutter build apk --release
 
       - name: Distribute to Firebase App Distribution
         uses: wzieba/Firebase-Distribution-Github-Action@v1
         with:
-          appId: ${{ secrets.FIREBASE_ANDROID_APP_ID }}
-          token: ${{ secrets.FIREBASE_TOKEN }}
-          groups: devs   # make sure this tester group exists in Firebase
-          file: build/app/outputs/bundle/release/app-release.aab
+          appId: ${{ secrets.FIREBASE_ANDROID_APP_ID }}  # from Firebase console
+          token: ${{ secrets.FIREBASE_TOKEN }}           # from `firebase login:ci`
+          groups: devs                                   # must exist in App Distribution
+          file: build/app/outputs/flutter-apk/app-release.apk
           releaseNotes: "Build ${{ github.sha }} from ${{ github.ref_name }}"

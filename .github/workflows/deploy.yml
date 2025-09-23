@@ -19,7 +19,6 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      # Sets up ANDROID_SDK_ROOT and cmdline-tools (so sdkmanager path works)
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
@@ -40,7 +39,7 @@ jobs:
             "build-tools;35.0.0"
           yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses
 
-      # Optional: speed up builds
+      # Optional caches
       - name: Cache Gradle
         uses: actions/cache@v4
         with:
@@ -48,32 +47,30 @@ jobs:
             ~/.gradle/caches
             ~/.gradle/wrapper
           key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle', '**/*.gradle.kts', 'gradle-wrapper.properties') }}
-          restore-keys: |
-            gradle-${{ runner.os }}-
+          restore-keys: gradle-${{ runner.os }}-
 
-      - name: Cache Pub (Dart/Flutter packages)
+      - name: Cache Pub
         uses: actions/cache@v4
         with:
           path: ~/.pub-cache
           key: pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
-          restore-keys: |
-            pub-${{ runner.os }}-
+          restore-keys: pub-${{ runner.os }}-
 
-      # Keep Groovy templates authoritative
+      # Make sure Groovy files are used
       - name: Remove KTS duplicates if present
         run: |
           rm -f android/settings.gradle.kts || true
           rm -f android/app/build.gradle.kts || true
 
-      # Make sure wrapper exists (some repos miss android/gradlew)
+      # Rehydrate Android wrapper if missing, using a valid project name
       - name: Ensure Android wrapper exists
         run: |
           if [ ! -f android/gradlew ]; then
-            flutter create .   # rehydrates missing Android wrapper files
+            flutter create . --platforms=android --project-name autocare_pro
           fi
           chmod +x android/gradlew
 
-      # Fix pubspec conflict you hit earlier (timezone vs flutter_local_notifications)
+      # Resolve previously seen pubspec conflict automatically
       - name: Update timezone dep (if needed)
         run: |
           if grep -q 'timezone:' pubspec.yaml && grep -q '^ *timezone: *\^0\.9\.' pubspec.yaml; then
@@ -87,7 +84,7 @@ jobs:
           flutter clean
           rm -rf android/.gradle android/build build
           flutter pub get
-          # VERIFY in android/app/build.gradle:
+          # android/app/build.gradle MUST include:
           #   compileSdk 35
           #   targetSdk 35
           #   compileOptions {
@@ -100,16 +97,15 @@ jobs:
           #   }
           flutter build apk --release -v
 
-      # Print a detailed dependency graph for desugaring if the build fails
+      # Only run diagnostics if wrapper exists AND the build failed
       - name: Print desugar dependency tree (diagnostic)
-        if: failure()
+        if: failure() && hashFiles('android/gradlew') != ''
         run: |
           cd android
           ./gradlew :app:dependencies --configuration coreLibraryDesugaringClasspath
 
-      # Force full Gradle stacktrace if Flutter build fails
       - name: Gradle assemble with stacktrace (diagnostic)
-        if: failure()
+        if: failure() && hashFiles('android/gradlew') != ''
         run: |
           cd android
           ./gradlew app:assembleRelease --no-daemon --stacktrace --info

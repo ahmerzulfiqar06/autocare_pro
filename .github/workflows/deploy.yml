@@ -42,6 +42,13 @@ jobs:
             "build-tools;35.0.0"
           yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses
 
+      - name: Update timezone dep (if needed)
+        run: |
+          if grep -q 'timezone:' pubspec.yaml && grep -q '^ *timezone: *\^0\.9\.' pubspec.yaml; then
+            flutter pub add timezone:^0.10.1
+          fi
+          flutter pub get
+
       # (Optional) ensure we don't have KTS duplicates that override Groovy files
       - name: Remove KTS duplicates if present
         run: |
@@ -60,6 +67,14 @@ jobs:
           #   compileOptions { coreLibraryDesugaringEnabled true; sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
           #   dependencies { coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:2.0.4" }
           flutter build apk --release
+          
+      - name: Ensure Android wrapper exists
+        run: |
+          if [ ! -f android/gradlew ]; then
+            flutter create .     # rehydrates missing android wrapper files
+          fi
+          chmod +x android/gradlew
+
           
       - name: Gradle assemble with stacktrace (diagnostic)
         if: failure()

@@ -2,7 +2,7 @@ name: Android • Build & Distribute (Firebase)
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master ]     # change if your default branch differs
   workflow_dispatch:
 
 jobs:
@@ -24,37 +24,46 @@ jobs:
         with:
           channel: stable
           flutter-version: '3.24.3'
+          cache: true                # speed up builds
 
-      - name: Set FLUTTER_HOME
-        run: |
-          echo "FLUTTER_HOME=/opt/hostedtoolcache/flutter/stable-3.24.3-x64" >> $GITHUB_ENV
-          echo "Flutter SDK location: $(which flutter)"
-          flutter doctor --android-licenses
+      - name: Flutter version
+        run: flutter --version
 
       - name: Dependencies
         run: flutter pub get
 
-      # Optional: sign release (skip if you don't have a keystore yet)
+      # ------- OPTIONAL: sign release (skip if you don't have a keystore yet) -------
       - name: Prepare keystore
         if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS_PASSWORD: ${{ secrets.KEY_ALIAS_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         run: |
+          # write keystore at android/ so storeFile=keystore.jks works from key.properties
           echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/keystore.jks
           cat > android/key.properties <<EOF
-          storePassword=${{ secrets.KEYSTORE_PASSWORD }}
-          keyPassword=${{ secrets.KEY_ALIAS_PASSWORD }}
-          keyAlias=${{ secrets.KEY_ALIAS }}
+          storePassword=${KEYSTORE_PASSWORD}
+          keyPassword=${KEY_ALIAS_PASSWORD}
+          keyAlias=${KEY_ALIAS}
           storeFile=keystore.jks
           EOF
+      # ------------------------------------------------------------------------------
 
-      # Use APK to avoid Play linking requirement (fastest for App Distribution)
+      - name: Clean old outputs (optional, helps with flaky Gradle caches)
+        run: |
+          flutter clean
+          rm -rf android/.gradle build
+
       - name: Build APK (release)
         run: flutter build apk --release
 
       - name: Distribute to Firebase App Distribution
         uses: wzieba/Firebase-Distribution-Github-Action@v1
         with:
-          appId: ${{ secrets.FIREBASE_ANDROID_APP_ID }}
-          token: ${{ secrets.FIREBASE_TOKEN }}
-          groups: devs
+          appId: ${{ secrets.FIREBASE_ANDROID_APP_ID }}  # Firebase Android App ID, not Project ID
+          token: ${{ secrets.FIREBASE_TOKEN }}           # from `firebase login:ci`
+          groups: devs                                   # must exist in App Distribution
           file: build/app/outputs/flutter-apk/app-release.apk
           releaseNotes: "Build ${{ github.sha }} from ${{ github.ref_name }}"

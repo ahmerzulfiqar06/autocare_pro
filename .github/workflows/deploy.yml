@@ -1,60 +1,68 @@
-name: Android • Build & Distribute (Firebase)
+name: Android Release
 
 on:
-  push:
-    branches: [ main, master ]     # change if your default branch differs
   workflow_dispatch:
+  push:
+    branches:
+      - main
+      - master
 
 jobs:
-  build-distribute:
+  build-android:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
+      - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
-          
-      - name: Set up Android SDK 35
-        env:
-    ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
-  run: |
-    yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager \
-      "platform-tools" \
-      "platforms;android-35" \
-      "build-tools;35.0.0"
-    yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses        
+          java-version: "17"
 
-      - name: Set up Flutter
+      # Sets up ANDROID_SDK_ROOT and cmdline-tools (so sdkmanager path works)
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: stable
-          flutter-version: '3.24.3'
-          cache: true                # speed up builds
+          flutter-version: "3.24.3"
+          cache: true
 
-      - name: Flutter version
-        run: flutter --version
-
-      - name: Dependencies
-        run: flutter pub get
-
-      - name: Clean old outputs (optional, helps with flaky Gradle caches)
+      - name: Install Android SDK 35 + build-tools
+        env:
+          ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
         run: |
+          yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" \
+            "platform-tools" \
+            "platforms;android-35" \
+            "build-tools;35.0.0"
+          yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses
+
+      # (Optional) ensure we don't have KTS duplicates that override Groovy files
+      - name: Remove KTS duplicates if present
+        run: |
+          rm -f android/settings.gradle.kts || true
+          rm -f android/app/build.gradle.kts || true
+
+      - name: Flutter build (release)
+        run: |
+          flutter --version
           flutter clean
-          rm -rf android/.gradle build
+          rm -rf android/.gradle android/build
+          flutter pub get
+          # Make sure android/app/build.gradle has:
+          #   compileSdk 35
+          #   targetSdk 35
+          #   compileOptions { coreLibraryDesugaringEnabled true; sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+          #   dependencies { coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:2.0.4" }
+          flutter build apk --release
 
-      - name: Build APK (release)
-        run: flutter build apk --release
-
-      - name: Distribute to Firebase App Distribution
-        uses: wzieba/Firebase-Distribution-Github-Action@v1
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
         with:
-          appId: ${{ secrets.FIREBASE_ANDROID_APP_ID }}  # Firebase Android App ID, not Project ID
-          token: ${{ secrets.FIREBASE_TOKEN }}           # from `firebase login:ci`
-          groups: devs                                   # must exist in App Distribution
-          file: build/app/outputs/flutter-apk/app-release.apk
-          releaseNotes: "Build ${{ github.sha }} from ${{ github.ref_name }}"
+          name: app-release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk

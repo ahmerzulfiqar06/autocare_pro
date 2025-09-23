@@ -4,12 +4,12 @@ plugins {
   id "dev.flutter.flutter-gradle-plugin"
 }
 
+/* Load signing props written by CI to android/key.properties */
 def keystoreProperties = new Properties()
 def keystorePropertiesFile = rootProject.file("key.properties")
 if (keystorePropertiesFile.exists()) {
-    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+  keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 }
-
 
 android {
   namespace "com.example.autocare_pro"
@@ -24,7 +24,8 @@ android {
     multiDexEnabled true
   }
 
- signingConfigs {
+  /* Release signing – uses properties provided by CI */
+  signingConfigs {
     release {
       if (keystoreProperties['storeFile']) {
         storeFile file(keystoreProperties['storeFile'])
@@ -37,11 +38,18 @@ android {
     }
   }
 
+  buildTypes {
+    release {
+      minifyEnabled false
+      shrinkResources false
+      signingConfig signingConfigs.release
+    }
+    debug { }
+  }
+
   // (Optional) helps some CI envs
   packagingOptions {
-    jniLibs {
-      useLegacyPackaging = true
-    }
+    jniLibs { useLegacyPackaging = true }
   }
 
   compileOptions {
@@ -51,22 +59,12 @@ android {
   }
   kotlinOptions {
     jvmTarget = "17"
-    // (Optional) stability with AGP 8.x on CI:
     freeCompilerArgs += ["-Xjvm-default=all"]
-  }
-
-  buildTypes {
-    release {
-      minifyEnabled false
-      shrinkResources false
-      signingConfig signingConfigs.release
-    }
   }
 }
 
 dependencies {
   coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:2.1.4"
   implementation "androidx.core:core-ktx:1.13.1"
-  // If you still see multidex complaints on some devices, you can also add:
   implementation "androidx.multidex:multidex:2.0.1"
 }

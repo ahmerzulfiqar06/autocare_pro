@@ -39,7 +39,7 @@ jobs:
             "build-tools;35.0.0"
           yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses
 
-      # Optional caches
+      # ---- Caches (speed) ----
       - name: Cache Gradle
         uses: actions/cache@v4
         with:
@@ -56,13 +56,12 @@ jobs:
           key: pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
           restore-keys: pub-${{ runner.os }}-
 
-      # Make sure Groovy files are used
+      # ---- Project hygiene ----
       - name: Remove KTS duplicates if present
         run: |
           rm -f android/settings.gradle.kts || true
           rm -f android/app/build.gradle.kts || true
 
-      # Rehydrate Android wrapper if missing, using a valid project name
       - name: Ensure Android wrapper exists
         run: |
           if [ ! -f android/gradlew ]; then
@@ -70,7 +69,7 @@ jobs:
           fi
           chmod +x android/gradlew
 
-      # Resolve previously seen pubspec conflict automatically
+      # If you pinned timezone ^0.9.x earlier, bump to ^0.10.x to satisfy flutter_local_notifications ^19.x
       - name: Update timezone dep (if needed)
         run: |
           if grep -q 'timezone:' pubspec.yaml && grep -q '^ *timezone: *\^0\.9\.' pubspec.yaml; then
@@ -78,41 +77,50 @@ jobs:
           fi
           flutter pub get
 
+      # ---- Build APK ----
       - name: Build release APK
         run: |
           flutter --version
+          # Once stable, you can remove the clean to benefit more from caches
           flutter clean
-          rm -rf android/.gradle android/build build
           flutter pub get
-          # android/app/build.gradle MUST include:
-          #   compileSdk 35
-          #   targetSdk 35
-          #   compileOptions {
-          #     sourceCompatibility JavaVersion.VERSION_17
-          #     targetCompatibility JavaVersion.VERSION_17
-          #     coreLibraryDesugaringEnabled true
-          #   }
-          #   dependencies {
-          #     coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:2.1.4"
-          #   }
+          # Ensure android/app/build.gradle has:
+          #   compileSdk 35, targetSdk 35
+          #   compileOptions { coreLibraryDesugaringEnabled true; sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+          #   dependencies { coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:2.1.4" }
           flutter build apk --release -v
 
-      # Only run diagnostics if wrapper exists AND the build failed
-      - name: Print desugar dependency tree (diagnostic)
-        if: failure() && hashFiles('android/gradlew') != ''
-        run: |
-          cd android
-          ./gradlew :app:dependencies --configuration coreLibraryDesugaringClasspath
-
-      - name: Gradle assemble with stacktrace (diagnostic)
-        if: failure() && hashFiles('android/gradlew') != ''
-        run: |
-          cd android
-          ./gradlew app:assembleRelease --no-daemon --stacktrace --info
-
+      # ---- Upload artifact to GitHub (optional, nice backup) ----
       - name: Upload APK artifact
         if: success()
         uses: actions/upload-artifact@v4
         with:
           name: app-release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
+
+      # ---- Distribute to Firebase App Distribution (TOKEN auth) ----
+      - name: Firebase App Distribution (Android)
+        if: success()
+        uses: wzieba/Firebase-Distribution-Github-Action@v2
+        with:
+          appId: ${{ secrets.FIREBASE_ANDROID_APP_ID }}
+          token: ${{ secrets.FIREBASE_TOKEN }}
+          file: build/app/outputs/flutter-apk/app-release.apk
+          # Use ONE of the following:
+          testers: "ahmerparacha2016@gmail.com"
+          # groups: "testers"
+          releaseNotes: "CI build from ${{ github.sha }}"
+          debug: true
+
+      # ---- Diagnostics only if build fails ----
+      - name: Print desugar dependency tree (diagnostic)
+        if: failure() && hashFiles('android/gradlew') != ''
+        run: |
+          cd android
+          ./gradlew :app:dependencies --configuration coreLibraryDesugaringClasspath || true
+
+      - name: Gradle assemble with stacktrace (diagnostic)
+        if: failure() && hashFiles('android/gradlew') != ''
+        run: |
+          cd android
+          ./gradlew app:assembleRelease --no-daemon --stacktrace --info || true

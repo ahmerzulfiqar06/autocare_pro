@@ -23,7 +23,7 @@ if (flutterVersionName == null) {
 
 android {
     namespace 'com.example.autocare_pro'
-    compileSdkVersion 35
+    compileSdkVersion 34
     ndkVersion '25.1.8937393'
 
     compileOptions {
@@ -35,7 +35,7 @@ android {
     defaultConfig {
         applicationId "com.example.autocare_pro"
         minSdkVersion 21
-        targetSdkVersion 35
+        targetSdkVersion 34
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
     }
@@ -54,10 +54,10 @@ flutter {
 }
 
 dependencies {
-    implementation 'androidx.appcompat:appcompat:1.7.0'
-    implementation 'com.google.android.material:material:1.12.0'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.android.material:material:1.11.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
 
     // Core library desugaring for Java 8+ APIs
-    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.2'
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'
 }

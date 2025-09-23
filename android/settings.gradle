@@ -5,12 +5,38 @@ pluginManagement {
         def f = new File(settingsDir, "../local.properties")
         if (f.exists()) {
             f.withInputStream { props.load(it) }
-            return props.getProperty("flutter.sdk")
+            def path = props.getProperty("flutter.sdk")
+            if (path) return path
         }
-        return System.getenv("FLUTTER_HOME")
+
+        // Try FLUTTER_HOME environment variable
+        def flutterHome = System.getenv("FLUTTER_HOME")
+        if (flutterHome) return flutterHome
+
+        // Try common CI paths
+        def ciPaths = [
+            "/opt/hostedtoolcache/flutter/stable-3.24.3-x64",
+            "/opt/hostedtoolcache/flutter/stable-3.22.0-x64",
+            "/usr/local/flutter"
+        ]
+
+        for (path in ciPaths) {
+            if (new File("${path}/packages/flutter_tools/gradle").exists()) {
+                return path
+            }
+        }
+
+        // If all else fails, return null and handle it gracefully
+        return null
     }.call()
 
-    includeBuild("${flutterSdkPath}/packages/flutter_tools/gradle")
+    // Only include Flutter build if the path exists and is not null
+    if (flutterSdkPath && new File("${flutterSdkPath}/packages/flutter_tools/gradle").exists()) {
+        includeBuild("${flutterSdkPath}/packages/flutter_tools/gradle")
+        println "Flutter SDK found at: ${flutterSdkPath}"
+    } else {
+        println "Warning: Flutter SDK not found. Please ensure Flutter is installed and FLUTTER_HOME is set."
+    }
 
     repositories {
         google()

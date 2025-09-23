@@ -19,7 +19,7 @@ jobs:
           flutter-version: '3.24.3'
       - run: flutter pub get
       - run: flutter build web --release
-      # Optional: remove tests or make them non-blocking
+      # Optional: run tests (disabled for faster deployment)
       # - run: flutter test
       #   continue-on-error: true
       - name: Deploy to Firebase Hosting
@@ -28,4 +28,4 @@ jobs:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_AUTOCARE_PRO }}
           channelId: live
-          projectId: your-project-id
+          projectId: your-firebase-project-id  # Replace with your actual project ID

@@ -45,7 +45,6 @@ class AppTheme {
 
         surface: cardLight,
         onSurface: Color(0xFF1C1B1F),
-        surfaceContainerHighest: Color(0xFFF5F5F5),
         onSurfaceVariant: Color(0xFF49454F),
 
         outline: Color(0xFF79747E),
@@ -117,7 +116,7 @@ class AppTheme {
       ),
 
       // Modern Card theme with subtle shadows
-      cardTheme: CardThemeData(
+      cardTheme: CardTheme(
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
@@ -255,7 +254,7 @@ class AppTheme {
       ),
 
       // Card theme
-      cardTheme: CardThemeData(
+      cardTheme: CardTheme(
         elevation: 2,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),

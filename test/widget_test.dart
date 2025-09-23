@@ -11,20 +11,19 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:autocare_pro/main.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
+  testWidgets('AutoCare Pro app loads successfully', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+    await tester.pumpWidget(const AutoCareProApp());
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    // Verify that the app loads without errors
+    // The app should have a MaterialApp with title
+    expect(tester.takeException(), isNull);
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    // Test that the app can handle basic navigation
+    // Since this is a complex app, we'll just verify it doesn't crash
+    await tester.pumpAndSettle();
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // Verify the app is in a good state
+    expect(tester.takeException(), isNull);
   });
 }

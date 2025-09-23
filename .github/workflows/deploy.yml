@@ -32,25 +32,6 @@ jobs:
       - name: Dependencies
         run: flutter pub get
 
-      # ------- OPTIONAL: sign release (skip if you don't have a keystore yet) -------
-      - name: Prepare keystore
-        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
-        env:
-          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS_PASSWORD: ${{ secrets.KEY_ALIAS_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-        run: |
-          # write keystore at android/ so storeFile=keystore.jks works from key.properties
-          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/keystore.jks
-          cat > android/key.properties <<EOF
-          storePassword=${KEYSTORE_PASSWORD}
-          keyPassword=${KEY_ALIAS_PASSWORD}
-          keyAlias=${KEY_ALIAS}
-          storeFile=keystore.jks
-          EOF
-      # ------------------------------------------------------------------------------
-
       - name: Clean old outputs (optional, helps with flaky Gradle caches)
         run: |
           flutter clean

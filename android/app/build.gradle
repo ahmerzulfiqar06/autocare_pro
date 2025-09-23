@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace "com.example.autocare_pro"   // match your manifest package
+    namespace "com.example.autocare_pro"          // <-- align with your package
     compileSdk 35
 
     defaultConfig {
-        applicationId "com.example.autocare_pro"
+        applicationId "com.example.autocare_pro"  // <-- same as above
         minSdk 21
         targetSdk 35
         versionCode 1
@@ -19,25 +19,28 @@ android {
 
     buildTypes {
         release {
-            // If you use proguard/r8, keep Flutter/Plugin classes as usual
             minifyEnabled false
             shrinkResources false
-            // signingConfig signingConfigs.release  // your signing if any
+            // signingConfig signingConfigs.release   // if you have signing
         }
         debug { }
     }
 
-    kotlinOptions {
-        jvmTarget = "17"
-    }
-
+    // Java/Kotlin toolchain + DESUGARING
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
-    } 
+        coreLibraryDesugaringEnabled true          // << REQUIRED
+    }
+    kotlinOptions {
+        jvmTarget = "17"
+    }
 }
 
 dependencies {
-    // Required for core library desugaring (version here is fine)
+    // Required for core library desugaring (matches AGP 8.x)
     coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:2.0.4"
+
+    // (Optional but typical)
+    implementation "androidx.core:core-ktx:1.13.1"
 }

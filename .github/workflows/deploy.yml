@@ -2,28 +2,51 @@ name: Android • Build & Distribute (Firebase)
 
 on:
   push:
-    branches: [ master ]
-  workflow_dispatch: {}
+    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build-distribute:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
 
-      - uses: actions/setup-java@v4
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
 
-      - uses: subosito/flutter-action@v2
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
         with:
           channel: stable
           flutter-version: '3.24.3'
 
-      - name: Flutter pub get
+      - name: Set FLUTTER_HOME
+        run: |
+          echo "FLUTTER_HOME=/opt/hostedtoolcache/flutter/stable-3.24.3-x64" >> $GITHUB_ENV
+          echo "Flutter SDK location: $(which flutter)"
+          flutter doctor --android-licenses
+
+      - name: Dependencies
         run: flutter pub get
 
+      # Optional: sign release (skip if you don't have a keystore yet)
+      - name: Prepare keystore
+        if: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+        run: |
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/keystore.jks
+          cat > android/key.properties <<EOF
+          storePassword=${{ secrets.KEYSTORE_PASSWORD }}
+          keyPassword=${{ secrets.KEY_ALIAS_PASSWORD }}
+          keyAlias=${{ secrets.KEY_ALIAS }}
+          storeFile=keystore.jks
+          EOF
+
+      # Use APK to avoid Play linking requirement (fastest for App Distribution)
       - name: Build APK (release)
         run: flutter build apk --release
 

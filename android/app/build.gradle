@@ -6,12 +6,12 @@ plugins {
 
 android {
     namespace "com.example.autocare_pro"   // match your manifest package
-    compileSdk 34
+    compileSdk 35
 
     defaultConfig {
         applicationId "com.example.autocare_pro"
         minSdk 21
-        targetSdk 34
+        targetSdk 35
         versionCode 1
         versionName "1.0"
         multiDexEnabled true
@@ -34,5 +34,10 @@ android {
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
-    }
+    } 
+}
+
+dependencies {
+    // Required for core library desugaring (version here is fine)
+    coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:2.0.4"
 }

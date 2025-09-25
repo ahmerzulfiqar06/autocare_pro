@@ -119,7 +119,7 @@ void main() async {
         Provider.value(value: cameraService),
         Provider.value(value: notificationService),
         Provider.value(value: notificationManager),
-        Provider.value(value: connectivityService),
+        ChangeNotifierProvider.value(value: connectivityService),
         ChangeNotifierProvider(
           create: (context) => VehicleProvider(vehicleRepository),
         ),

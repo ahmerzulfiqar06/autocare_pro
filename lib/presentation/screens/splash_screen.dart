@@ -180,8 +180,8 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                               ),
                             ],
                           ),
-                          child: const CustomIcon(
-                            iconPath: AppIcons.car,
+                          child: const Icon(
+                            Icons.directions_car,
                             size: 60,
                             color: AppTheme.primaryBlue,
                           ),

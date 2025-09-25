@@ -60,20 +60,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Dashboard'),
+        automaticallyImplyLeading: false, // Remove back button
         actions: [
           IconButton(
-            icon: const CustomIcon(
-              iconPath: AppIcons.search,
-              size: 20,
-            ),
+            icon: const Icon(Icons.search, size: 20),
             onPressed: () => Navigator.pushNamed(context, Routes.search),
             tooltip: 'Search',
           ),
           IconButton(
-            icon: const CustomIcon(
-              iconPath: AppIcons.gear,
-              size: 20,
-            ),
+            icon: const Icon(Icons.settings, size: 20),
             onPressed: () => Navigator.pushNamed(context, Routes.settings),
             tooltip: 'Settings',
           ),
@@ -119,8 +114,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           tooltip: 'Add Vehicle',
           backgroundColor: Theme.of(context).colorScheme.primary,
           foregroundColor: Colors.white,
-          child: const CustomIcon(
-            iconPath: AppIcons.add,
+          child: const Icon(
+            Icons.add,
             size: 24,
             color: Colors.white,
           ),
@@ -169,47 +164,45 @@ class _DashboardScreenState extends State<DashboardScreen> {
         final totalVehicles = vehicleProvider.totalVehiclesCount;
 
         return Row(
-          children: AppAnimations.staggeredList(
-            children: [
-              Expanded(
-                child: AppAnimations.scaleIn(
-                  child: DashboardCard(
-                    title: 'Active Vehicles',
-                    value: activeVehicles.toString(),
-                    icon: CustomIcon(
-                      iconPath: AppIcons.car,
-                      size: 24,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
+          children: [
+            Expanded(
+              child: AppAnimations.scaleIn(
+                child: DashboardCard(
+                  title: 'Active Vehicles',
+                  value: activeVehicles.toString(),
+                  icon: Icon(
+                    Icons.directions_car,
+                    size: 24,
                     color: Theme.of(context).colorScheme.primary,
-                    onTap: () => Navigator.pushNamed(context, Routes.vehicleList),
                   ),
+                  color: Theme.of(context).colorScheme.primary,
+                  onTap: () => Navigator.pushNamed(context, Routes.vehicleList),
                 ),
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: AppAnimations.scaleIn(
-                  child: FutureBuilder<double>(
-                    future: serviceProvider.getTotalServiceCostAll(),
-                    builder: (context, snapshot) {
-                      final totalCost = snapshot.data ?? 0.0;
-                      return DashboardCard(
-                        title: 'Total Spent',
-                        value: Helpers.formatCurrency(totalCost),
-                        icon: CustomIcon(
-                          iconPath: AppIcons.money,
-                          size: 24,
-                          color: Theme.of(context).colorScheme.secondary,
-                        ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: AppAnimations.scaleIn(
+                child: FutureBuilder<double>(
+                  future: serviceProvider.getTotalServiceCostAll(),
+                  builder: (context, snapshot) {
+                    final totalCost = snapshot.data ?? 0.0;
+                    return DashboardCard(
+                      title: 'Total Spent',
+                      value: Helpers.formatCurrency(totalCost),
+                      icon: Icon(
+                        Icons.attach_money,
+                        size: 24,
                         color: Theme.of(context).colorScheme.secondary,
-                        onTap: () => Navigator.pushNamed(context, Routes.analytics),
-                      );
-                    },
-                  ),
+                      ),
+                      color: Theme.of(context).colorScheme.secondary,
+                      onTap: () => Navigator.pushNamed(context, Routes.analytics),
+                    );
+                  },
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         );
       },
     );
@@ -227,51 +220,49 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
         const SizedBox(height: 16),
         Row(
-          children: AppAnimations.staggeredList(
-            children: [
-              Expanded(
-                child: AppAnimations.bounceIn(
-                  child: _buildActionButton(
-                    icon: CustomIcon(
-                      iconPath: AppIcons.car,
-                      size: 32,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    label: 'Add Vehicle',
-                    onTap: () => Navigator.pushNamed(context, Routes.addVehicle),
+          children: [
+            Expanded(
+              child: AppAnimations.bounceIn(
+                child: _buildActionButton(
+                  icon: Icon(
+                    Icons.directions_car,
+                    size: 32,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
+                  label: 'Add Vehicle',
+                  onTap: () => Navigator.pushNamed(context, Routes.addVehicle),
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: AppAnimations.bounceIn(
-                  child: _buildActionButton(
-                    icon: CustomIcon(
-                      iconPath: AppIcons.wrench,
-                      size: 32,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    label: 'Log Service',
-                    onTap: () => Navigator.pushNamed(context, Routes.addService),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: AppAnimations.bounceIn(
+                child: _buildActionButton(
+                  icon: Icon(
+                    Icons.build,
+                    size: 32,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
+                  label: 'Log Service',
+                  onTap: () => Navigator.pushNamed(context, Routes.addService),
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: AppAnimations.bounceIn(
-                  child: _buildActionButton(
-                    icon: CustomIcon(
-                      iconPath: AppIcons.chart,
-                      size: 32,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    label: 'Analytics',
-                    onTap: () => Navigator.pushNamed(context, Routes.analytics),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: AppAnimations.bounceIn(
+                child: _buildActionButton(
+                  icon: Icon(
+                    Icons.analytics,
+                    size: 32,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
+                  label: 'Analytics',
+                  onTap: () => Navigator.pushNamed(context, Routes.analytics),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ],
     );

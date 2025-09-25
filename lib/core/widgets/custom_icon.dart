@@ -26,10 +26,19 @@ class CustomIcon extends StatelessWidget {
           : null,
       semanticsLabel: semanticLabel,
       placeholderBuilder: (context) => Icon(
-        Icons.error_outline,
+        Icons.help_outline,
         size: size,
-        color: Theme.of(context).colorScheme.error,
+        color: color ?? Theme.of(context).colorScheme.primary.withOpacity(0.5),
       ),
+      errorBuilder: (context, error, stackTrace) {
+        // Log the error for debugging
+        debugPrint('Failed to load SVG: $iconPath - Error: $error');
+        return Icon(
+          Icons.image_not_supported_outlined,
+          size: size,
+          color: color ?? Theme.of(context).colorScheme.error.withOpacity(0.5),
+        );
+      },
     );
   }
 }

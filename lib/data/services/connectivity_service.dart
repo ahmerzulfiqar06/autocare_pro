@@ -187,8 +187,9 @@ class ConnectionStatusIndicator extends StatelessWidget {
         if (!connectivityService.isOnline) {
           return const OfflineBanner();
         }
-        return const SizedBox.shrink();
+        return child!;
       },
+      child: const SizedBox.shrink(),
     );
   }
 }
@@ -209,7 +210,7 @@ class OfflineAwareWrapper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Consumer<ConnectivityService>(
-      builder: (context, connectivityService, child) {
+      builder: (context, connectivityService, childWidget) {
         if (!connectivityService.isOnline && showOfflineMessage) {
           return Container(
             padding: const EdgeInsets.all(20),
@@ -245,8 +246,9 @@ class OfflineAwareWrapper extends StatelessWidget {
           );
         }
 
-        return child;
+        return childWidget ?? child;
       },
+      child: child,
     );
   }
 }

@@ -155,8 +155,8 @@ class NotificationService {
     required String id,
     required String title,
     required String body,
-    required RepeatInterval interval,
     required TimeOfDay time,
+    required RepeatInterval interval,
     String? payload,
   }) async {
     const AndroidNotificationDetails androidNotificationDetails =
@@ -177,17 +177,15 @@ class NotificationService {
       iOS: iosNotificationDetails,
     );
 
-    final scheduledTime = _nextInstanceOfTime(time);
+    final scheduledDateTime = _nextInstanceOfTime(time);
 
     await _flutterLocalNotificationsPlugin.zonedSchedule(
       int.parse(id),
       title,
       body,
-      tz.TZDateTime.from(scheduledTime, tz.local),
+      tz.TZDateTime.from(scheduledDateTime, tz.local),
       notificationDetails,
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
       matchDateTimeComponents: DateTimeComponents.time,
       payload: payload,
     );
@@ -319,17 +317,6 @@ class NotificationService {
 
     return scheduledTime.isBefore(now) ? scheduledTime.add(const Duration(days: 1)) : scheduledTime;
   }
-}
-
-// Notification urgency levels
-enum NotificationUrgency {
-  low,
-  medium,
-  high,
-  critical,
-}
-
-  // Schedule upcoming service reminders
   Future<void> scheduleUpcomingServiceReminders(
     List<Service> services,
     List<Vehicle> vehicles,
@@ -511,4 +498,12 @@ enum NotificationUrgency {
     await _requestPermissions();
     return await checkPermissions();
   }
+}
+
+// Notification urgency levels
+enum NotificationUrgency {
+  low,
+  medium,
+  high,
+  critical,
 }

@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:convert';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:path_provider/path_provider.dart';
@@ -182,7 +181,7 @@ class ExportService {
           ),
         ),
         pw.SizedBox(height: 10),
-        pw.Table.fromTextArray(
+        pw.TableHelper.fromTextArray(
           headers: ['Make', 'Model', 'Year', 'Mileage', 'Status'],
           data: vehicles.map((vehicle) => [
             vehicle.make,
@@ -214,7 +213,7 @@ class ExportService {
           ),
         ),
         pw.SizedBox(height: 10),
-        pw.Table.fromTextArray(
+        pw.TableHelper.fromTextArray(
           headers: ['Vehicle', 'Service', 'Date', 'Cost'],
           data: services.take(10).map((service) {
             final vehicle = services.firstWhere((s) => s.vehicleId == service.vehicleId,
@@ -249,7 +248,7 @@ class ExportService {
           ),
         ),
         pw.SizedBox(height: 10),
-        pw.Table.fromTextArray(
+        pw.TableHelper.fromTextArray(
           headers: ['Service', 'Next Due', 'Status', 'Days Until'],
           data: schedules.map((schedule) {
             final daysUntil = schedule.daysUntilDue;
@@ -275,9 +274,6 @@ class ExportService {
   pw.Widget _buildSummarySection(List<Vehicle> vehicles, List<Service> services) {
     final totalSpent = services.fold<double>(0.0, (sum, service) => sum + service.cost);
     final activeVehicles = vehicles.where((v) => v.status == VehicleStatus.active).length;
-    final overdueSchedules = services.where((s) =>
-      s.serviceDate.isBefore(DateTime.now().subtract(const Duration(days: 30)))).length;
-
     return pw.Container(
       padding: const pw.EdgeInsets.all(15),
       decoration: pw.BoxDecoration(

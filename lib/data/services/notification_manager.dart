@@ -3,6 +3,7 @@ import 'package:autocare_pro/data/models/vehicle.dart';
 import 'package:autocare_pro/data/repositories/service_repository.dart';
 import 'package:autocare_pro/data/repositories/vehicle_repository.dart';
 import 'package:autocare_pro/data/services/notification_service.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class NotificationManager {
   final NotificationService _notificationService;

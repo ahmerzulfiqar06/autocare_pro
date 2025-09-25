@@ -109,7 +109,7 @@ class AnalyticsChart extends StatelessWidget {
               interval: _calculateInterval(),
               getTitlesWidget: (value, meta) {
                 return Text(
-                  Helpers.formatCurrency(value, showSymbol: false),
+                  Helpers.formatCurrency(value),
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                   ),
@@ -204,7 +204,7 @@ class AnalyticsChart extends StatelessWidget {
               interval: _calculateInterval(),
               getTitlesWidget: (value, meta) {
                 return Text(
-                  Helpers.formatCurrency(value, showSymbol: false),
+                  Helpers.formatCurrency(value),
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                   ),

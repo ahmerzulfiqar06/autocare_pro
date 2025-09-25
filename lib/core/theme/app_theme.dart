@@ -207,7 +207,6 @@ class AppTheme {
         error: accentRed,
         surface: cardDark,
         onSurface: Color(0xFFE6E1E5),
-        surfaceVariant: Color(0xFF2B2930),
         onSurfaceVariant: Color(0xFFCAC4D0),
       ),
 

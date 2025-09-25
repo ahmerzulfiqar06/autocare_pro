@@ -115,7 +115,7 @@ jobs:
           name: gradle-build-log
           path: gradle-build.log
 
-      # ---- Locate, normalize, and rename APK ----
+      # ---- Locate, normalize, and rename APK (for Firebase) ----
       - name: Locate and rename APK
         run: |
           set -e
@@ -179,3 +179,31 @@ jobs:
           testers: "ahmerparacha2016@gmail.com"
           releaseNotes: "📱 CI build ${{ github.run_number }} • Commit ${{ github.sha }} • $(date +'%Y-%m-%d')"
           debug: true
+
+      # ---- Build AAB for Play Store ----
+      - name: Build App Bundle (AAB)
+        run: |
+          cd android
+          ./gradlew :app:bundleRelease --no-daemon --stacktrace --info --warning-mode all
+          cd ..
+        shell: bash
+
+      - name: Locate and upload AAB artifact
+        run: |
+          set -e
+          AAB="android/app/build/outputs/bundle/release/app-release.aab"
+          if [ ! -f "$AAB" ]; then
+            echo "::error::AAB not found at $AAB"
+            exit 1
+          fi
+          DATE=$(date +'%Y-%m-%d')
+          DEST="build/app/outputs/bundle/app-release-${DATE}-build-${GITHUB_RUN_NUMBER}.aab"
+          mkdir -p build/app/outputs/bundle
+          cp "$AAB" "$DEST"
+          echo "FINAL_AAB_PATH=$DEST" >> $GITHUB_ENV
+
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-aab
+          path: ${{ env.FINAL_AAB_PATH }}

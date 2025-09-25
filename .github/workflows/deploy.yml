@@ -183,6 +183,7 @@ jobs:
       # ---- Build AAB for Play Store ----
       - name: Build App Bundle (AAB)
         run: |
+          # You can also do: flutter build appbundle --release -v
           cd android
           ./gradlew :app:bundleRelease --no-daemon --stacktrace --info --warning-mode all
           cd ..
@@ -191,15 +192,42 @@ jobs:
       - name: Locate and upload AAB artifact
         run: |
           set -e
-          AAB="android/app/build/outputs/bundle/release/app-release.aab"
-          if [ ! -f "$AAB" ]; then
-            echo "::error::AAB not found at $AAB"
+
+          echo "=== Listing potential AAB folders ==="
+          ls -R build/app/outputs/bundle || true
+          ls -R android/app/build/outputs/bundle || true
+
+          AAB=""
+
+          # 1) Flutter output (when using `flutter build appbundle`)
+          if [ -f build/app/outputs/bundle/release/app-release.aab ]; then
+            AAB="build/app/outputs/bundle/release/app-release.aab"
+          fi
+
+          # 2) Gradle output (when using :app:bundleRelease)
+          if [ -z "$AAB" ]; then
+            AAB=$(find android/app/build/outputs/bundle -type f -name "*.aab" 2>/dev/null | head -n 1 || true)
+          fi
+
+          if [ -z "$AAB" ]; then
+            echo "::error::AAB not found in either build/app/outputs/bundle or android/app/build/outputs/bundle."
+            echo "Did the previous AAB build step succeed?"
             exit 1
           fi
+
+          echo "✅ Found AAB: $AAB"
+
           DATE=$(date +'%Y-%m-%d')
-          DEST="build/app/outputs/bundle/app-release-${DATE}-build-${GITHUB_RUN_NUMBER}.aab"
-          mkdir -p build/app/outputs/bundle
-          cp "$AAB" "$DEST"
+          DEST_DIR="build/app/outputs/bundle/release"
+          mkdir -p "$DEST_DIR"
+          DEST="$DEST_DIR/app-release-${DATE}-build-${GITHUB_RUN_NUMBER}.aab"
+
+          if [ "$AAB" != "$DEST" ]; then
+            cp "$AAB" "$DEST"
+          else
+            echo "📦 AAB already at destination, skipping copy."
+          fi
+
           echo "FINAL_AAB_PATH=$DEST" >> $GITHUB_ENV
 
       - name: Upload AAB artifact

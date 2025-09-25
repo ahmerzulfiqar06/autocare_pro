@@ -352,7 +352,7 @@ class ExportService {
     return pw.Container(
       padding: const pw.EdgeInsets.all(10),
       decoration: pw.BoxDecoration(
-        border: pw.Border.top(width: 1),
+        border: pw.Border(top: pw.BorderSide(width: 1)),
       ),
       child: pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,

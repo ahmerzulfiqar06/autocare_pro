@@ -1,6 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
+static final lightTheme = ThemeData(
+    textTheme: GoogleFonts.interTextTheme(),
+    primarySwatch: Colors.blue,
+    brightness: Brightness.light,
+  );
+
+static final darkTheme = ThemeData(
+    textTheme: GoogleFonts.interTextTheme(),
+    brightness: Brightness.dark,
+  );
+}
+
   // Modern Professional Color Palette (Google Material 3 inspired)
   static const Color primaryBlue = Color(0xFF1A73E8);      // Google Blue - Primary
   static const Color primaryLight = Color(0xFF4285F4);     // Light Blue - Secondary

@@ -72,10 +72,10 @@ jobs:
       # ---- Provision signing (writes files CI-only; nothing in repo) ----
       - name: Provision Android keystore & key.properties
         run: |
-          # write keystore where the app module looks for it
+          # Write keystore where the app module expects it
           echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/app/upload-keystore.jks
 
-          # write android/key.properties consumed by app/build.gradle
+          # Write android/key.properties consumed by app/build.gradle
           cat > android/key.properties <<EOF
           storeFile=upload-keystore.jks
           storePassword=${ANDROID_KEYSTORE_PASSWORD}
@@ -98,14 +98,29 @@ jobs:
           fi
           flutter pub get
 
-      # ---- Build APK (signed) ----
+      # ---- Quick static checks to fail early on Dart/asset issues ----
+      - name: Flutter doctor & analyze
+        run: |
+          flutter doctor -v
+          flutter analyze
+
+      # ---- Build APK (signed) with full verbose log captured ----
       - name: Build release APK
         run: |
           flutter --version
-          # once stable, you can remove 'flutter clean' to get more cache benefits
           flutter clean
           flutter pub get
-          flutter build apk --release -v
+          # Build with verbose logging; capture to a file for debugging on failure
+          set -o pipefail
+          flutter build apk --release -v 2>&1 | tee flutter_build_verbose.log
+
+      # ---- Upload verbose log if build failed ----
+      - name: Upload build log (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flutter-build-verbose-log
+          path: flutter_build_verbose.log
 
       # ---- Optional backup artifact on GitHub ----
       - name: Upload APK artifact
@@ -120,14 +135,14 @@ jobs:
         if: success()
         uses: wzieba/Firebase-Distribution-Github-Action@v1
         with:
-          appId: ${{ secrets.FIREBASE_ANDROID_APP_ID }}     # e.g. 1:1234567890:android:abc123...
-          token: ${{ secrets.FIREBASE_TOKEN }}              # from `firebase login:ci`
+          appId: ${{ secrets.FIREBASE_ANDROID_APP_ID }}
+          token: ${{ secrets.FIREBASE_TOKEN }}
           file: build/app/outputs/flutter-apk/app-release.apk
-          testers: "ahmerparacha2016@gmail.com"                        # <-- put your email
+          testers: "ahmerparacha2016@gmail.com"  # <-- put your email
           releaseNotes: "CI build ${{ github.run_number }} from ${{ github.sha }}"
           debug: true
 
-      # ---- Diagnostics if build fails ----
+      # ---- Extra Gradle diagnostics (only if something failed before) ----
       - name: Gradle signingReport (diagnostic)
         if: failure() && hashFiles('android/gradlew') != ''
         run: |

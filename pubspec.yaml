@@ -29,7 +29,7 @@ dependencies:
 
   # Camera & Image
   image_picker: ^1.0.4
-  path_provider: ^6.1.2
+  path_provider: ^2.1.5
 
   # Charts & Analytics
   fl_chart: ^0.66.1

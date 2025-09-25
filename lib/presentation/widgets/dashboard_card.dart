@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class DashboardCard extends StatelessWidget {
   final String title;
   final String value;
-  final IconData icon;
+  final Widget icon;
   final Color color;
   final VoidCallback? onTap;
 
@@ -49,10 +49,10 @@ class DashboardCard extends StatelessWidget {
                     color: color.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(
-                    icon,
-                    color: color,
-                    size: 24,
+                  child: SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: icon,
                   ),
                 ),
                 const SizedBox(width: 12),

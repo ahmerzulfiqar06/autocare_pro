@@ -56,48 +56,63 @@ class AppTheme {
         surfaceTint: primaryBlue,
       ),
 
-      // Typography
+      // Typography with modern fonts
       textTheme: const TextTheme(
         headlineLarge: TextStyle(
           fontSize: 32,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w700,
           color: Colors.black87,
+          fontFamily: 'Inter',
+          letterSpacing: -0.5,
         ),
         headlineMedium: TextStyle(
           fontSize: 28,
           fontWeight: FontWeight.w600,
           color: Colors.black87,
+          fontFamily: 'Inter',
+          letterSpacing: -0.25,
         ),
         headlineSmall: TextStyle(
           fontSize: 24,
           fontWeight: FontWeight.w600,
           color: Colors.black87,
+          fontFamily: 'Inter',
         ),
         titleLarge: TextStyle(
           fontSize: 22,
-          fontWeight: FontWeight.w500,
+          fontWeight: FontWeight.w600,
           color: Colors.black87,
+          fontFamily: 'Inter',
         ),
         titleMedium: TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w500,
           color: Colors.black87,
+          fontFamily: 'Inter',
         ),
         bodyLarge: TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w400,
           color: Colors.black87,
+          fontFamily: 'Inter',
+          height: 1.5,
         ),
         bodyMedium: TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w400,
           color: Colors.black87,
+          fontFamily: 'Inter',
+          height: 1.4,
         ),
         labelLarge: TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w500,
           color: Colors.black87,
+          fontFamily: 'Inter',
         ),
+      ).apply(
+        displayColor: Colors.black87,
+        bodyColor: Colors.black87,
       ),
 
       // Enhanced AppBar with modern styling
@@ -196,48 +211,63 @@ class AppTheme {
         onSurfaceVariant: Color(0xFFCAC4D0),
       ),
 
-      // Typography
+      // Typography with modern fonts
       textTheme: ThemeData.dark().textTheme.copyWith(
         headlineLarge: const TextStyle(
           fontSize: 32,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w700,
           color: Colors.white,
+          fontFamily: 'Inter',
+          letterSpacing: -0.5,
         ),
         headlineMedium: const TextStyle(
           fontSize: 28,
           fontWeight: FontWeight.w600,
           color: Colors.white,
+          fontFamily: 'Inter',
+          letterSpacing: -0.25,
         ),
         headlineSmall: const TextStyle(
           fontSize: 24,
           fontWeight: FontWeight.w600,
           color: Colors.white,
+          fontFamily: 'Inter',
         ),
         titleLarge: const TextStyle(
           fontSize: 22,
-          fontWeight: FontWeight.w500,
+          fontWeight: FontWeight.w600,
           color: Colors.white,
+          fontFamily: 'Inter',
         ),
         titleMedium: const TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w500,
           color: Colors.white,
+          fontFamily: 'Inter',
         ),
         bodyLarge: const TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w400,
           color: Colors.white,
+          fontFamily: 'Inter',
+          height: 1.5,
         ),
         bodyMedium: const TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w400,
           color: Colors.white,
+          fontFamily: 'Inter',
+          height: 1.4,
         ),
         labelLarge: const TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w500,
           color: Colors.white,
+          fontFamily: 'Inter',
         ),
+      ).apply(
+        displayColor: Colors.white,
+        bodyColor: Colors.white,
       ),
 
       // App bar theme

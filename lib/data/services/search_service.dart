@@ -6,7 +6,10 @@ enum SearchFilter {
   all('All'),
   vehicles('Vehicles'),
   services('Services'),
-  schedules('Schedules');
+  schedules('Schedules'),
+  overdue('Overdue Items'),
+  upcoming('Upcoming Services'),
+  highPriority('High Priority');
 
   const SearchFilter(this.displayName);
   final String displayName;
@@ -19,7 +22,11 @@ enum SortOption {
   nameAZ('Name A-Z'),
   nameZA('Name Z-A'),
   costHigh('Cost High-Low'),
-  costLow('Cost Low-High');
+  costLow('Cost Low-High'),
+  mileageHigh('Mileage High-Low'),
+  mileageLow('Mileage Low-High'),
+  priorityHigh('Priority High-Low'),
+  dueSoon('Due Soon');
 
   const SortOption(this.displayName);
   final String displayName;
@@ -71,6 +78,32 @@ class SearchService {
     required List<ServiceSchedule> schedules,
     SearchFilter filter = SearchFilter.all,
     SortOption sortBy = SortOption.relevance,
+  }) {
+    return performAdvancedSearch(
+      query: query,
+      vehicles: vehicles,
+      services: services,
+      schedules: schedules,
+      filter: filter,
+      sortBy: sortBy,
+    );
+  }
+
+  // Advanced search with comprehensive filtering
+  List<SearchResult> performAdvancedSearch({
+    String? query,
+    required List<Vehicle> vehicles,
+    required List<Service> services,
+    required List<ServiceSchedule> schedules,
+    SearchFilter filter = SearchFilter.all,
+    SortOption sortBy = SortOption.relevance,
+    DateTime? dateFrom,
+    DateTime? dateTo,
+    double? costMin,
+    double? costMax,
+    int? mileageMin,
+    int? mileageMax,
+    List<String>? serviceTypes,
   }) {
     if (query.trim().isEmpty) {
       return _getDefaultResults(vehicles, services, schedules, filter, sortBy);
@@ -459,5 +492,219 @@ class SearchService {
         cost: service.cost,
       );
     }).toList();
+  }
+
+  // Get overdue items (services and schedules)
+  List<SearchResult> getOverdueItems({
+    required List<Vehicle> vehicles,
+    required List<Service> services,
+    required List<ServiceSchedule> schedules,
+  }) {
+    final results = <SearchResult>[];
+    final now = DateTime.now();
+
+    // Overdue services
+    for (final service in services) {
+      if (service.serviceDate.isBefore(now.subtract(const Duration(days: 30)))) {
+        final vehicle = vehicles.firstWhere(
+          (v) => v.id == service.vehicleId,
+          orElse: () => Vehicle(make: 'Unknown', model: 'Vehicle', year: 2020, currentMileage: 0),
+        );
+
+        results.add(SearchResult(
+          id: service.id,
+          title: service.serviceType.displayName,
+          subtitle: '${vehicle.year} ${vehicle.make} ${vehicle.model}',
+          type: 'service',
+          description: 'Overdue by ${now.difference(service.serviceDate).inDays} days',
+          date: service.serviceDate,
+          cost: service.cost,
+          metadata: {'isOverdue': true, 'daysOverdue': now.difference(service.serviceDate).inDays},
+        ));
+      }
+    }
+
+    // Overdue schedules
+    for (final schedule in schedules) {
+      if (schedule.isDue) {
+        final vehicle = vehicles.firstWhere(
+          (v) => v.id == schedule.vehicleId,
+          orElse: () => Vehicle(make: 'Unknown', model: 'Vehicle', year: 2020, currentMileage: 0),
+        );
+
+        results.add(SearchResult(
+          id: schedule.id,
+          title: schedule.serviceName,
+          subtitle: '${vehicle.year} ${vehicle.make} ${vehicle.model}',
+          type: 'schedule',
+          description: 'Overdue by ${-schedule.daysUntilDue} days',
+          date: schedule.nextServiceDate,
+          metadata: {'isOverdue': true, 'daysOverdue': -schedule.daysUntilDue},
+        ));
+      }
+    }
+
+    return _sortResults(results, SortOption.dueSoon);
+  }
+
+  // Get upcoming services (next 7 days)
+  List<SearchResult> getUpcomingServices({
+    required List<Vehicle> vehicles,
+    required List<ServiceSchedule> schedules,
+    int days = 7,
+  }) {
+    final results = <SearchResult>[];
+    final now = DateTime.now();
+    final futureDate = now.add(Duration(days: days));
+
+    for (final schedule in schedules) {
+      if (schedule.nextServiceDate.isAfter(now) &&
+          schedule.nextServiceDate.isBefore(futureDate)) {
+        final vehicle = vehicles.firstWhere(
+          (v) => v.id == schedule.vehicleId,
+          orElse: () => Vehicle(make: 'Unknown', model: 'Vehicle', year: 2020, currentMileage: 0),
+        );
+
+        results.add(SearchResult(
+          id: schedule.id,
+          title: schedule.serviceName,
+          subtitle: '${vehicle.year} ${vehicle.make} ${vehicle.model}',
+          type: 'schedule',
+          description: 'Due in ${schedule.daysUntilDue} days',
+          date: schedule.nextServiceDate,
+          metadata: {'daysUntilDue': schedule.daysUntilDue},
+        ));
+      }
+    }
+
+    return _sortResults(results, SortOption.dueSoon);
+  }
+
+  // Get high priority items
+  List<SearchResult> getHighPriorityItems({
+    required List<Vehicle> vehicles,
+    required List<Service> services,
+    required List<ServiceSchedule> schedules,
+  }) {
+    final results = <SearchResult>[];
+
+    // High priority services (safety related)
+    for (final service in services) {
+      if (_isHighPriorityService(service.serviceType)) {
+        final vehicle = vehicles.firstWhere(
+          (v) => v.id == service.vehicleId,
+          orElse: () => Vehicle(make: 'Unknown', model: 'Vehicle', year: 2020, currentMileage: 0),
+        );
+
+        results.add(SearchResult(
+          id: service.id,
+          title: service.serviceType.displayName,
+          subtitle: '${vehicle.year} ${vehicle.make} ${vehicle.model}',
+          type: 'service',
+          description: 'High Priority Service',
+          date: service.serviceDate,
+          cost: service.cost,
+          metadata: {'isHighPriority': true},
+        ));
+      }
+    }
+
+    // High priority schedules
+    for (final schedule in schedules) {
+      if (_isHighPrioritySchedule(schedule.serviceType)) {
+        final vehicle = vehicles.firstWhere(
+          (v) => v.id == schedule.vehicleId,
+          orElse: () => Vehicle(make: 'Unknown', model: 'Vehicle', year: 2020, currentMileage: 0),
+        );
+
+        results.add(SearchResult(
+          id: schedule.id,
+          title: schedule.serviceName,
+          subtitle: '${vehicle.year} ${vehicle.make} ${vehicle.model}',
+          type: 'schedule',
+          description: 'High Priority Service',
+          date: schedule.nextServiceDate,
+          metadata: {'isHighPriority': true},
+        ));
+      }
+    }
+
+    return _sortResults(results, SortOption.priorityHigh);
+  }
+
+  bool _isHighPriorityService(ServiceType serviceType) {
+    return serviceType == ServiceType.brakeService ||
+           serviceType == ServiceType.tireRotation ||
+           serviceType == ServiceType.inspection;
+  }
+
+  bool _isHighPrioritySchedule(ScheduleServiceType serviceType) {
+    return serviceType == ScheduleServiceType.brakeService ||
+           serviceType == ScheduleServiceType.tireRotation ||
+           serviceType == ScheduleServiceType.inspection;
+  }
+
+  List<SearchResult> _sortResults(List<SearchResult> results, SortOption sort) {
+    results.sort((a, b) {
+      switch (sort) {
+        case SortOption.relevance:
+          return a.title.toLowerCase().compareTo(b.title.toLowerCase());
+        case SortOption.dateNewest:
+          if (a.date != null && b.date != null) {
+            return b.date!.compareTo(a.date!);
+          }
+          return 0;
+        case SortOption.dateOldest:
+          if (a.date != null && b.date != null) {
+            return a.date!.compareTo(b.date!);
+          }
+          return 0;
+        case SortOption.nameAZ:
+          return a.title.toLowerCase().compareTo(b.title.toLowerCase());
+        case SortOption.nameZA:
+          return b.title.toLowerCase().compareTo(a.title.toLowerCase());
+        case SortOption.costHigh:
+          if (a.cost != null && b.cost != null) {
+            return b.cost!.compareTo(a.cost!);
+          }
+          return 0;
+        case SortOption.costLow:
+          if (a.cost != null && b.cost != null) {
+            return a.cost!.compareTo(b.cost!);
+          }
+          return 0;
+        case SortOption.mileageHigh:
+          if (a.mileage != null && b.mileage != null) {
+            return b.mileage!.compareTo(a.mileage!);
+          }
+          return 0;
+        case SortOption.mileageLow:
+          if (a.mileage != null && b.mileage != null) {
+            return a.mileage!.compareTo(b.mileage!);
+          }
+          return 0;
+        case SortOption.priorityHigh:
+          return _getPriorityScore(b).compareTo(_getPriorityScore(a));
+        case SortOption.dueSoon:
+          return _getDueSoonScore(a).compareTo(_getDueSoonScore(b));
+      }
+    });
+
+    return results;
+  }
+
+  int _getPriorityScore(SearchResult result) {
+    final metadata = result.metadata;
+    if (metadata['isHighPriority'] == true) return 3;
+    if (metadata['isOverdue'] == true) return 2;
+    return 1;
+  }
+
+  int _getDueSoonScore(SearchResult result) {
+    final metadata = result.metadata;
+    if (metadata['isOverdue'] == true) return 3;
+    final daysUntil = metadata['daysUntilDue'] as int?;
+    if (daysUntil != null && daysUntil <= 3) return 2;
+    return 1;
   }
 }

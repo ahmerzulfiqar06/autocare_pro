@@ -317,6 +317,17 @@ class ServiceProvider extends ChangeNotifier {
     }
   }
 
+  // Get all services as Future (for charts)
+  Future<List<Service>> getAllServicesFuture() async {
+    try {
+      return await _serviceRepository.getAllServices();
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return [];
+    }
+  }
+
   // Get service statistics
   Future<Map<String, dynamic>?> getServiceStatistics(String vehicleId) async {
     try {

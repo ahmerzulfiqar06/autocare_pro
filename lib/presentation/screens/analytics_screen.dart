@@ -4,6 +4,10 @@ import 'package:autocare_pro/core/utils/helpers.dart';
 import 'package:autocare_pro/data/models/service.dart';
 import 'package:autocare_pro/presentation/providers/service_provider.dart';
 import 'package:autocare_pro/presentation/providers/vehicle_provider.dart';
+import 'package:autocare_pro/presentation/widgets/analytics_chart.dart';
+import 'package:autocare_pro/presentation/widgets/export_dialog.dart';
+import 'package:autocare_pro/core/widgets/custom_icon.dart';
+import 'package:autocare_pro/data/services/connectivity_service.dart';
 
 // Route constants
 class Routes {
@@ -78,6 +82,10 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with TickerProviderSt
           ),
           PopupMenuButton<String>(
             onSelected: (value) {
+              if (value == 'export') {
+                _showExportDialog(context);
+                return;
+              }
               setState(() {
                 _selectedPeriod = value;
               });
@@ -87,6 +95,13 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with TickerProviderSt
               const PopupMenuItem(value: 'This Year', child: Text('This Year')),
               const PopupMenuItem(value: 'This Month', child: Text('This Month')),
               const PopupMenuItem(value: 'Last 3 Months', child: Text('Last 3 Months')),
+              const PopupMenuItem(value: 'export', child: Row(
+                children: [
+                  const Icon(Icons.download, size: 18),
+                  const SizedBox(width: 8),
+                  const Text('Export Data'),
+                ],
+              )),
             ],
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -136,15 +151,18 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with TickerProviderSt
                 ],
               ),
             )
-          : RefreshIndicator(
-              onRefresh: _loadData,
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildOverviewTab(),
-                  _buildTrendsTab(),
-                  _buildBreakdownTab(),
-                ],
+          : OfflineAwareWrapper(
+              offlineWidget: _buildOfflineAnalytics(),
+              child: RefreshIndicator(
+                onRefresh: _loadData,
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildOverviewTab(),
+                    _buildTrendsTab(),
+                    _buildBreakdownTab(),
+                  ],
+                ),
               ),
             ),
     );
@@ -203,7 +221,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with TickerProviderSt
                     child: _buildMetricCard(
                       title: 'Total Vehicles',
                       value: totalVehicles.toString(),
-                      icon: Icons.directions_car,
+                      icon: const CustomIcon(
+                        iconPath: AppIcons.car,
+                        size: 20,
+                        color: Color(0xFF2196F3),
+                      ),
                       color: const Color(0xFF2196F3),
                       trend: '+12%',
                     ),
@@ -213,7 +235,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with TickerProviderSt
                     child: _buildMetricCard(
                       title: 'Active Vehicles',
                       value: activeVehicles.toString(),
-                      icon: Icons.directions_car_filled,
+                      icon: const CustomIcon(
+                        iconPath: AppIcons.car,
+                        size: 20,
+                        color: Color(0xFF4CAF50),
+                      ),
                       color: const Color(0xFF4CAF50),
                       trend: '+8%',
                     ),
@@ -227,7 +253,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with TickerProviderSt
                     child: _buildMetricCard(
                       title: 'Services Logged',
                       value: totalServices.toString(),
-                      icon: Icons.build,
+                      icon: const CustomIcon(
+                        iconPath: AppIcons.wrench,
+                        size: 20,
+                        color: Color(0xFFFF9800),
+                      ),
                       color: const Color(0xFFFF9800),
                       trend: '+15%',
                     ),
@@ -241,7 +271,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with TickerProviderSt
                         return _buildMetricCard(
                           title: 'Total Spent',
                           value: Helpers.formatCurrency(totalCost),
-                          icon: Icons.attach_money,
+                          icon: const CustomIcon(
+                            iconPath: AppIcons.money,
+                            size: 20,
+                            color: Color(0xFFE91E63),
+                          ),
                           color: const Color(0xFFE91E63),
                           trend: '+5%',
                         );
@@ -261,21 +295,33 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with TickerProviderSt
               ),
               const SizedBox(height: 16),
               _buildInsightCard(
-                icon: Icons.trending_up,
+                icon: const CustomIcon(
+                  iconPath: AppIcons.chart,
+                  size: 20,
+                  color: Colors.green,
+                ),
                 title: 'Cost Efficiency',
                 description: 'Your average service cost is 8% lower than last month',
                 color: Colors.green,
               ),
               const SizedBox(height: 12),
               _buildInsightCard(
-                icon: Icons.schedule,
+                icon: const CustomIcon(
+                  iconPath: AppIcons.calendar,
+                  size: 20,
+                  color: Colors.orange,
+                ),
                 title: 'Maintenance Schedule',
                 description: 'Next service due in 2 weeks for Toyota Camry',
                 color: Colors.orange,
               ),
               const SizedBox(height: 12),
               _buildInsightCard(
-                icon: Icons.star,
+                icon: const CustomIcon(
+                  iconPath: AppIcons.wrench,
+                  size: 20,
+                  color: Colors.blue,
+                ),
                 title: 'Top Service Type',
                 description: 'Oil changes are your most frequent service',
                 color: Colors.blue,
@@ -301,59 +347,63 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with TickerProviderSt
           ),
           const SizedBox(height: 20),
 
-          // Cost Trend Chart Placeholder
-          Container(
-            height: 300,
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
-              ),
-            ),
-            child: const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.show_chart, size: 48, color: Colors.grey),
-                  SizedBox(height: 16),
-                  Text('Interactive cost trend chart coming soon'),
-                  SizedBox(height: 8),
-                  Text(
-                    'Track your maintenance expenses over time',
-                    style: TextStyle(color: Colors.grey, fontSize: 12),
+          // Cost Trend Chart
+          FutureBuilder<List<ChartDataPoint>>(
+            future: _getMonthlyCostData(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) {
+                return Container(
+                  height: 300,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+                    ),
                   ),
-                ],
-              ),
-            ),
+                  child: const Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                );
+              }
+
+              return AnalyticsChart(
+                title: 'Monthly Maintenance Costs',
+                data: snapshot.data!,
+                chartType: ChartType.line,
+                primaryColor: Theme.of(context).colorScheme.primary,
+              );
+            },
           ),
           const SizedBox(height: 24),
 
-          // Service Frequency Chart Placeholder
-          Container(
-            height: 300,
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
-              ),
-            ),
-            child: const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.pie_chart, size: 48, color: Colors.grey),
-                  SizedBox(height: 16),
-                  Text('Service type distribution chart coming soon'),
-                  SizedBox(height: 8),
-                  Text(
-                    'See which services you use most frequently',
-                    style: TextStyle(color: Colors.grey, fontSize: 12),
+          // Service Frequency Chart
+          FutureBuilder<List<ChartDataPoint>>(
+            future: _getServiceTypeData(),
+            builder: (context, snapshot) {
+              if (!snapshot.hasData) {
+                return Container(
+                  height: 300,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+                    ),
                   ),
-                ],
-              ),
-            ),
+                  child: const Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                );
+              }
+
+              return AnalyticsChart(
+                title: 'Service Type Distribution',
+                data: snapshot.data!,
+                chartType: ChartType.pie,
+                primaryColor: Theme.of(context).colorScheme.secondary,
+              );
+            },
           ),
         ],
       ),
@@ -561,7 +611,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with TickerProviderSt
   Widget _buildMetricCard({
     required String title,
     required String value,
-    required IconData icon,
+    required Widget icon,
     required Color color,
     required String trend,
   }) {
@@ -593,7 +643,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with TickerProviderSt
                   color: color.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(icon, color: color, size: 20),
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: icon,
+                ),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -632,7 +686,7 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with TickerProviderSt
   }
 
   Widget _buildInsightCard({
-    required IconData icon,
+    required Widget icon,
     required String title,
     required String description,
     required Color color,
@@ -654,7 +708,11 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with TickerProviderSt
               color: color.withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(icon, color: color, size: 20),
+            child: SizedBox(
+              width: 20,
+              height: 20,
+              child: icon,
+            ),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -675,6 +733,220 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> with TickerProviderSt
                   ),
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<List<ChartDataPoint>> _getMonthlyCostData() async {
+    final serviceProvider = context.read<ServiceProvider>();
+    final services = await serviceProvider.getAllServicesFuture();
+
+    // Group services by month for the last 6 months
+    final now = DateTime.now();
+    final monthlyData = <String, double>{};
+
+    for (int i = 5; i >= 0; i--) {
+      final date = DateTime(now.year, now.month - i, 1);
+      final monthKey = '${date.year}-${date.month.toString().padLeft(2, '0')}';
+      monthlyData[monthKey] = 0.0;
+    }
+
+    for (final service in services) {
+      final monthKey = '${service.serviceDate.year}-${service.serviceDate.month.toString().padLeft(2, '0')}';
+      if (monthlyData.containsKey(monthKey)) {
+        monthlyData[monthKey] = (monthlyData[monthKey] ?? 0) + service.cost;
+      }
+    }
+
+    return monthlyData.entries.map((entry) {
+      final date = DateTime.parse('${entry.key}-01');
+      final monthName = _getMonthName(date.month);
+      return ChartDataPoint(
+        label: monthName,
+        value: entry.value,
+      );
+    }).toList();
+  }
+
+  Future<List<ChartDataPoint>> _getServiceTypeData() async {
+    final serviceProvider = context.read<ServiceProvider>();
+    final services = await serviceProvider.getAllServicesFuture();
+
+    final typeCount = <String, int>{};
+    for (final service in services) {
+      typeCount[service.serviceType.displayName] =
+          (typeCount[service.serviceType.displayName] ?? 0) + 1;
+    }
+
+    final total = services.length.toDouble();
+    return typeCount.entries.map((entry) {
+      final percentage = (entry.value / total) * 100;
+      return ChartDataPoint(
+        label: entry.key,
+        value: percentage,
+      );
+    }).toList();
+  }
+
+  String _getMonthName(int month) {
+    const months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    return months[month - 1];
+  }
+
+  void _showExportDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => const ExportDialog(),
+    );
+  }
+
+  Widget _buildOfflineAnalytics() {
+    return Consumer2<VehicleProvider, ServiceProvider>(
+      builder: (context, vehicleProvider, serviceProvider, child) {
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Colors.orange.withOpacity(0.3),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.offline_bolt,
+                      color: Colors.orange,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Offline Mode',
+                            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.orange,
+                            ),
+                          ),
+                          Text(
+                            'Showing cached data. Some features may be limited.',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Colors.orange.withOpacity(0.8),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Show cached summary
+              _buildOfflineSummary(vehicleProvider, serviceProvider),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildOfflineSummary(VehicleProvider vehicleProvider, ServiceProvider serviceProvider) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Cached Summary',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _buildOfflineMetricCard(
+                  title: 'Vehicles',
+                  value: vehicleProvider.vehicles.length.toString(),
+                  icon: Icons.directions_car,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildOfflineMetricCard(
+                  title: 'Services',
+                  value: serviceProvider.services.length.toString(),
+                  icon: Icons.build,
+                  color: Theme.of(context).colorScheme.secondary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Note: Charts and detailed analytics require internet connection.',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOfflineMetricCard({
+    required String title,
+    required String value,
+    required IconData icon,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline.withOpacity(0.1),
+        ),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, color: color, size: 24),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          Text(
+            title,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
             ),
           ),
         ],

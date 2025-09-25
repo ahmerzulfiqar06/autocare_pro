@@ -4,6 +4,8 @@ import 'package:autocare_pro/core/utils/helpers.dart';
 import 'package:autocare_pro/presentation/providers/app_provider.dart';
 import 'package:autocare_pro/presentation/providers/vehicle_provider.dart';
 import 'package:autocare_pro/presentation/providers/service_provider.dart';
+import 'package:autocare_pro/presentation/widgets/export_dialog.dart';
+import 'package:autocare_pro/presentation/widgets/backup_restore_dialog.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -131,27 +133,43 @@ class _SettingsScreenState extends State<SettingsScreen> {
         children: [
           // Export Data
           ListTile(
-            leading: Icon(
-              Icons.download,
-              color: Theme.of(context).colorScheme.primary,
+            leading: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.download,
+                color: Colors.blue,
+                size: 20,
+              ),
             ),
             title: const Text('Export Data'),
-            subtitle: const Text('Download your data as JSON'),
+            subtitle: const Text('Choose from CSV, PDF, or share summary'),
             trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-            onTap: () => _exportData(),
+            onTap: () => _showExportDialog(),
           ),
           const Divider(height: 1),
 
-          // Import Data
+          // Backup & Restore
           ListTile(
-            leading: Icon(
-              Icons.upload,
-              color: Theme.of(context).colorScheme.secondary,
+            leading: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(
+                Icons.backup,
+                color: Colors.green,
+                size: 20,
+              ),
             ),
-            title: const Text('Import Data'),
-            subtitle: const Text('Import data from backup file'),
+            title: const Text('Backup & Restore'),
+            subtitle: const Text('Create backups and restore data'),
             trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-            onTap: () => _importData(),
+            onTap: () => _showBackupRestoreDialog(),
           ),
           const Divider(height: 1),
 
@@ -273,10 +291,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _exportData() {
-    Helpers.showInfoSnackBar(
-      context,
-      'Data export feature coming soon!',
+  void _showExportDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => const ExportDialog(),
+    );
+  }
+
+  void _showBackupRestoreDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => const BackupRestoreDialog(),
     );
   }
 

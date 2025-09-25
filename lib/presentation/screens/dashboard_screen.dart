@@ -7,6 +7,8 @@ import 'package:autocare_pro/presentation/providers/service_provider.dart';
 import 'package:autocare_pro/presentation/widgets/dashboard_card.dart';
 import 'package:autocare_pro/presentation/widgets/recent_services_card.dart';
 import 'package:autocare_pro/presentation/widgets/upcoming_services_card.dart';
+import 'package:autocare_pro/core/widgets/custom_icon.dart';
+import 'package:autocare_pro/core/utils/animations.dart';
 
 // Route constants
 class Routes {
@@ -60,12 +62,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
         title: const Text('Dashboard'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.search),
+            icon: const CustomIcon(
+              iconPath: AppIcons.search,
+              size: 20,
+            ),
             onPressed: () => Navigator.pushNamed(context, Routes.search),
             tooltip: 'Search',
           ),
           IconButton(
-            icon: const Icon(Icons.settings),
+            icon: const CustomIcon(
+              iconPath: AppIcons.gear,
+              size: 20,
+            ),
             onPressed: () => Navigator.pushNamed(context, Routes.settings),
             tooltip: 'Settings',
           ),
@@ -105,10 +113,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.pushNamed(context, Routes.addVehicle),
-        tooltip: 'Add Vehicle',
-        child: const Icon(Icons.add),
+      floatingActionButton: AppAnimations.scaleIn(
+        child: FloatingActionButton(
+          onPressed: () => Navigator.pushNamed(context, Routes.addVehicle),
+          tooltip: 'Add Vehicle',
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          foregroundColor: Colors.white,
+          child: const CustomIcon(
+            iconPath: AppIcons.add,
+            size: 24,
+            color: Colors.white,
+          ),
+        ),
       ),
     );
   }
@@ -153,33 +169,47 @@ class _DashboardScreenState extends State<DashboardScreen> {
         final totalVehicles = vehicleProvider.totalVehiclesCount;
 
         return Row(
-          children: [
-            Expanded(
-              child: DashboardCard(
-                title: 'Active Vehicles',
-                value: activeVehicles.toString(),
-                icon: Icons.directions_car,
-                color: Theme.of(context).colorScheme.primary,
-                onTap: () => Navigator.pushNamed(context, Routes.vehicleList),
+          children: AppAnimations.staggeredList(
+            children: [
+              Expanded(
+                child: AppAnimations.scaleIn(
+                  child: DashboardCard(
+                    title: 'Active Vehicles',
+                    value: activeVehicles.toString(),
+                    icon: CustomIcon(
+                      iconPath: AppIcons.car,
+                      size: 24,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    color: Theme.of(context).colorScheme.primary,
+                    onTap: () => Navigator.pushNamed(context, Routes.vehicleList),
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: FutureBuilder<double>(
-                future: serviceProvider.getTotalServiceCostAll(),
-                builder: (context, snapshot) {
-                  final totalCost = snapshot.data ?? 0.0;
-                  return DashboardCard(
-                    title: 'Total Spent',
-                    value: Helpers.formatCurrency(totalCost),
-                    icon: Icons.attach_money,
-                    color: Theme.of(context).colorScheme.secondary,
-                    onTap: () => Navigator.pushNamed(context, Routes.analytics),
-                  );
-                },
+              const SizedBox(width: 16),
+              Expanded(
+                child: AppAnimations.scaleIn(
+                  child: FutureBuilder<double>(
+                    future: serviceProvider.getTotalServiceCostAll(),
+                    builder: (context, snapshot) {
+                      final totalCost = snapshot.data ?? 0.0;
+                      return DashboardCard(
+                        title: 'Total Spent',
+                        value: Helpers.formatCurrency(totalCost),
+                        icon: CustomIcon(
+                          iconPath: AppIcons.money,
+                          size: 24,
+                          color: Theme.of(context).colorScheme.secondary,
+                        ),
+                        color: Theme.of(context).colorScheme.secondary,
+                        onTap: () => Navigator.pushNamed(context, Routes.analytics),
+                      );
+                    },
+                  ),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         );
       },
     );
@@ -197,45 +227,66 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
         const SizedBox(height: 16),
         Row(
-          children: [
-            Expanded(
-              child: _buildActionButton(
-                icon: Icons.directions_car,
-                label: 'Add Vehicle',
-                onTap: () => Navigator.pushNamed(context, Routes.addVehicle),
+          children: AppAnimations.staggeredList(
+            children: [
+              Expanded(
+                child: AppAnimations.bounceIn(
+                  child: _buildActionButton(
+                    icon: CustomIcon(
+                      iconPath: AppIcons.car,
+                      size: 32,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    label: 'Add Vehicle',
+                    onTap: () => Navigator.pushNamed(context, Routes.addVehicle),
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildActionButton(
-                icon: Icons.build,
-                label: 'Log Service',
-                onTap: () => Navigator.pushNamed(context, Routes.addService),
+              const SizedBox(width: 12),
+              Expanded(
+                child: AppAnimations.bounceIn(
+                  child: _buildActionButton(
+                    icon: CustomIcon(
+                      iconPath: AppIcons.wrench,
+                      size: 32,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    label: 'Log Service',
+                    onTap: () => Navigator.pushNamed(context, Routes.addService),
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildActionButton(
-                icon: Icons.analytics,
-                label: 'Analytics',
-                onTap: () => Navigator.pushNamed(context, Routes.analytics),
+              const SizedBox(width: 12),
+              Expanded(
+                child: AppAnimations.bounceIn(
+                  child: _buildActionButton(
+                    icon: CustomIcon(
+                      iconPath: AppIcons.chart,
+                      size: 32,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    label: 'Analytics',
+                    onTap: () => Navigator.pushNamed(context, Routes.analytics),
+                  ),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ],
     );
   }
 
   Widget _buildActionButton({
-    required IconData icon,
+    required Widget icon,
     required String label,
     required VoidCallback onTap,
   }) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
@@ -243,13 +294,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
           border: Border.all(
             color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
           ),
+          boxShadow: [
+            BoxShadow(
+              color: Theme.of(context).colorScheme.shadow.withOpacity(0.05),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Column(
           children: [
-            Icon(
-              icon,
-              size: 32,
-              color: Theme.of(context).colorScheme.primary,
+            AnimatedScale(
+              duration: const Duration(milliseconds: 150),
+              scale: 1.0,
+              child: icon,
             ),
             const SizedBox(height: 8),
             Text(

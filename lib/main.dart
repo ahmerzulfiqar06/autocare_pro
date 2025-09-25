@@ -5,11 +5,15 @@ import 'package:autocare_pro/data/repositories/vehicle_repository.dart';
 import 'package:autocare_pro/data/repositories/service_repository.dart';
 import 'package:autocare_pro/data/services/database_service.dart';
 import 'package:autocare_pro/data/services/camera_service.dart';
+import 'package:autocare_pro/data/services/notification_service.dart';
+import 'package:autocare_pro/data/services/notification_manager.dart';
+import 'package:autocare_pro/data/services/connectivity_service.dart';
 import 'package:autocare_pro/presentation/providers/app_provider.dart';
 import 'package:autocare_pro/presentation/providers/vehicle_provider.dart';
 import 'package:autocare_pro/presentation/providers/service_provider.dart';
 import 'package:autocare_pro/presentation/screens/dashboard_screen.dart';
 import 'package:autocare_pro/presentation/screens/vehicle_list_screen.dart';
+import 'package:autocare_pro/data/services/connectivity_service.dart';
 import 'package:autocare_pro/presentation/screens/vehicle_details_screen.dart';
 import 'package:autocare_pro/presentation/screens/add_vehicle_screen.dart';
 import 'package:autocare_pro/presentation/screens/service_list_screen.dart';
@@ -108,6 +112,21 @@ void main() async {
   final serviceRepository = ServiceRepository(databaseService);
   final cameraService = CameraService();
 
+  // Initialize notification service
+  final notificationService = NotificationService();
+  await notificationService.initialize();
+
+  // Initialize notification manager
+  final notificationManager = NotificationManager(
+    notificationService: notificationService,
+    serviceRepository: serviceRepository,
+    vehicleRepository: vehicleRepository,
+  );
+
+  // Initialize connectivity service
+  final connectivityService = ConnectivityService();
+  await connectivityService.initialize();
+
   // Initialize app provider
   final appProvider = AppProvider();
   await appProvider.initialize();
@@ -120,16 +139,39 @@ void main() async {
         Provider.value(value: vehicleRepository),
         Provider.value(value: serviceRepository),
         Provider.value(value: cameraService),
+        Provider.value(value: notificationService),
+        Provider.value(value: notificationManager),
+        Provider.value(value: connectivityService),
         ChangeNotifierProvider(
           create: (context) => VehicleProvider(vehicleRepository),
         ),
         ChangeNotifierProvider(
-          create: (context) => ServiceProvider(serviceRepository),
+          create: (context) => ServiceProvider(serviceRepository)..loadAllActiveSchedules(),
         ),
       ],
-      child: const AutoCareProApp(),
+      child: FutureBuilder(
+        future: _initializeNotifications(notificationManager),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const MaterialApp(
+              home: Scaffold(
+                body: Center(
+                  child: CircularProgressIndicator(),
+                ),
+              ),
+            );
+          }
+
+          return const AutoCareProApp();
+        },
+      ),
     ),
   );
+}
+
+Future<void> _initializeNotifications(NotificationManager notificationManager) async {
+  // Initialize smart notifications after app setup
+  await notificationManager.initializeSmartNotifications();
 }
 
 class AutoCareProApp extends StatelessWidget {
@@ -152,7 +194,16 @@ class AutoCareProApp extends StatelessWidget {
               data: MediaQuery.of(context).copyWith(
                 textScaleFactor: 1.0, // Prevent system font scaling
               ),
-              child: child!,
+              child: Column(
+                children: [
+                  // Connection status indicator
+                  const ConnectionStatusIndicator(),
+                  // Main app content
+                  Expanded(
+                    child: child!,
+                  ),
+                ],
+              ),
             );
           },
         );

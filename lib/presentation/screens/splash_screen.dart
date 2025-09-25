@@ -5,6 +5,7 @@ import 'package:autocare_pro/presentation/providers/app_provider.dart';
 import 'package:autocare_pro/presentation/providers/vehicle_provider.dart';
 import 'package:autocare_pro/presentation/providers/service_provider.dart';
 import 'package:autocare_pro/data/services/database_service.dart';
+import 'package:autocare_pro/core/widgets/custom_icon.dart';
 
 // Route constants
 class Routes {
@@ -179,8 +180,8 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                               ),
                             ],
                           ),
-                          child: const Icon(
-                            Icons.directions_car,
+                          child: const CustomIcon(
+                            iconPath: AppIcons.car,
                             size: 60,
                             color: AppTheme.primaryBlue,
                           ),

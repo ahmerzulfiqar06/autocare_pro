@@ -149,9 +149,9 @@ class ServiceSchedule {
     } else if (daysUntilDue <= 7) {
       return 'Due in $daysUntilDue days';
     } else if (daysUntilDue <= 30) {
-      return 'Due in ${daysUntilDue} days';
+      return 'Due in $daysUntilDue days';
     } else {
-      return 'Next service: ${formattedNextServiceDate}';
+      return 'Next service: $formattedNextServiceDate';
     }
   }
 

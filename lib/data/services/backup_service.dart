@@ -5,8 +5,6 @@ import 'package:share_plus/share_plus.dart';
 import 'package:autocare_pro/data/models/vehicle.dart';
 import 'package:autocare_pro/data/models/service.dart';
 import 'package:autocare_pro/data/models/service_schedule.dart';
-import 'package:autocare_pro/data/repositories/vehicle_repository.dart';
-import 'package:autocare_pro/data/repositories/service_repository.dart';
 
 class BackupService {
   static const String _backupPrefix = 'autocare_backup_';

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:path_provider/path_provider.dart';
@@ -98,9 +99,9 @@ class ExportService {
         build: (context) => [
           _buildVehicleSection(vehicles),
           pw.SizedBox(height: 20),
-          _buildServiceSection(services),
+          _buildServiceSection(services, vehicles),
           pw.SizedBox(height: 20),
-          _buildScheduleSection(schedules),
+          _buildScheduleSection(schedules, vehicles),
           pw.SizedBox(height: 20),
           _buildSummarySection(vehicles, services),
         ],
@@ -181,7 +182,7 @@ class ExportService {
           ),
         ),
         pw.SizedBox(height: 10),
-        pw.TableHelper.fromTextArray(
+        pw.Table.fromTextArray(
           headers: ['Make', 'Model', 'Year', 'Mileage', 'Status'],
           data: vehicles.map((vehicle) => [
             vehicle.make,
@@ -200,7 +201,7 @@ class ExportService {
   }
 
   // Build service section
-  pw.Widget _buildServiceSection(List<Service> services) {
+  pw.Widget _buildServiceSection(List<Service> services, List<Vehicle> vehicles) {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
@@ -213,13 +214,20 @@ class ExportService {
           ),
         ),
         pw.SizedBox(height: 10),
-        pw.TableHelper.fromTextArray(
+        pw.Table.fromTextArray(
           headers: ['Vehicle', 'Service', 'Date', 'Cost'],
           data: services.take(10).map((service) {
-            final vehicle = services.firstWhere((s) => s.vehicleId == service.vehicleId,
-              orElse: () => service); // Fallback
+            final vehicle = vehicles.firstWhere(
+              (v) => v.id == service.vehicleId,
+              orElse: () => Vehicle(
+                make: 'Unknown',
+                model: 'Vehicle',
+                year: 0,
+                currentMileage: 0,
+              ),
+            );
             return [
-              '${vehicle.vehicleId}', // Would need vehicle lookup in real app
+              '${vehicle.year} ${vehicle.make} ${vehicle.model}',
               service.serviceType.displayName,
               Helpers.formatDate(service.serviceDate),
               Helpers.formatCurrency(service.cost),
@@ -235,7 +243,7 @@ class ExportService {
   }
 
   // Build schedule section
-  pw.Widget _buildScheduleSection(List<ServiceSchedule> schedules) {
+  pw.Widget _buildScheduleSection(List<ServiceSchedule> schedules, List<Vehicle> vehicles) {
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
@@ -248,13 +256,26 @@ class ExportService {
           ),
         ),
         pw.SizedBox(height: 10),
-        pw.TableHelper.fromTextArray(
-          headers: ['Service', 'Next Due', 'Status', 'Days Until'],
+        pw.Table.fromTextArray(
+          headers: ['Vehicle', 'Service', 'Next Due', 'Status', 'Days Until'],
           data: schedules.map((schedule) {
+            final vehicle = vehicles.firstWhere(
+              (v) => v.id == schedule.vehicleId,
+              orElse: () => Vehicle(
+                make: 'Unknown',
+                model: 'Vehicle',
+                year: 0,
+                currentMileage: 0,
+              ),
+            );
             final daysUntil = schedule.daysUntilDue;
-            final status = daysUntil < 0 ? 'OVERDUE' :
-                          daysUntil <= 7 ? 'DUE SOON' : 'ACTIVE';
+            final status = daysUntil < 0
+                ? 'OVERDUE'
+                : daysUntil <= 7
+                    ? 'DUE SOON'
+                    : 'ACTIVE';
             return [
+              '${vehicle.year} ${vehicle.make} ${vehicle.model}',
               schedule.serviceName,
               Helpers.formatDate(schedule.nextServiceDate),
               status,
@@ -325,10 +346,11 @@ class ExportService {
   // Share export file
   Future<void> shareFile(File file, String fileName) async {
     try {
-      await Share.shareXFiles(
-        [XFile(file.path)],
-        text: 'AutoCare Pro - $fileName',
+      await SharePlus.instance.share(
+        sharePositionOrigin: Rect.zero,
+        shareFiles: [XFile(file.path)],
         subject: 'Vehicle Maintenance Report',
+        text: 'AutoCare Pro - $fileName',
       );
     } catch (e) {
       throw Exception('Failed to share file: $e');

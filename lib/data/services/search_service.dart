@@ -105,16 +105,19 @@ class SearchService {
     int? mileageMax,
     List<String>? serviceTypes,
   }) {
-    if (query.trim().isEmpty) {
+    final trimmedQuery = query?.trim();
+    final hasQuery = trimmedQuery != null && trimmedQuery.isNotEmpty;
+
+    if (!hasQuery) {
       return _getDefaultResults(vehicles, services, schedules, filter, sortBy);
     }
 
     final results = <SearchResult>[];
 
     // Add to search history
-    _addToSearchHistory(query);
+    _addToSearchHistory(trimmedQuery);
 
-    final searchTerm = query.toLowerCase().trim();
+    final searchTerm = trimmedQuery.toLowerCase();
 
     // Search vehicles
     if (filter == SearchFilter.all || filter == SearchFilter.vehicles) {
@@ -295,6 +298,22 @@ class SearchService {
         final aCost = a.cost ?? double.maxFinite;
         final bCost = b.cost ?? double.maxFinite;
         return aCost.compareTo(bCost);
+
+      case SortOption.mileageHigh:
+        final aMileage = a.mileage ?? 0;
+        final bMileage = b.mileage ?? 0;
+        return bMileage.compareTo(aMileage);
+
+      case SortOption.mileageLow:
+        final aMileage = a.mileage ?? 0;
+        final bMileage = b.mileage ?? 0;
+        return aMileage.compareTo(bMileage);
+
+      case SortOption.priorityHigh:
+        return _getPriorityScore(b).compareTo(_getPriorityScore(a));
+
+      case SortOption.dueSoon:
+        return _getDueSoonScore(a).compareTo(_getDueSoonScore(b));
     }
   }
 

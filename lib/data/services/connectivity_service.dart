@@ -1,7 +1,9 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
+import 'dart:developer' as developer;
+
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:autocare_pro/core/utils/animations.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class ConnectivityService extends ChangeNotifier {
   static final ConnectivityService _instance = ConnectivityService._internal();
@@ -12,6 +14,7 @@ class ConnectivityService extends ChangeNotifier {
   late StreamSubscription<ConnectivityResult> _connectivitySubscription;
   bool _isOnline = false;
   bool _showOfflineBanner = false;
+  bool _isDisposed = false;
 
   ConnectivityResult get connectionStatus => _connectionStatus;
   bool get isOnline => _isOnline;
@@ -46,10 +49,9 @@ class ConnectivityService extends ChangeNotifier {
   // Hide offline banner after a delay
   void _hideOfflineBannerAfterDelay() {
     Future.delayed(const Duration(seconds: 5), () {
-      if (mounted) {
-        _showOfflineBanner = false;
-        notifyListeners();
-      }
+      if (_isDisposed) return;
+      _showOfflineBanner = false;
+      notifyListeners();
     });
   }
 
@@ -106,6 +108,7 @@ class ConnectivityService extends ChangeNotifier {
 
   @override
   void dispose() {
+    _isDisposed = true;
     _connectivitySubscription.cancel();
     super.dispose();
   }
@@ -252,26 +255,48 @@ class OfflineAwareWrapper extends StatelessWidget {
 class CachedDataManager {
   static const String _cachePrefix = 'autocare_cache_';
   static const Duration _cacheDuration = Duration(hours: 24);
+  static final Map<String, _CacheEntry> _cacheStore = {};
 
   // Cache data with timestamp
   static Future<void> cacheData(String key, Map<String, dynamic> data) async {
     try {
-      // In a real app, you'd use a proper caching mechanism
-      // For this demo, we'll use simple in-memory caching
-      // In production, consider using shared_preferences or a database
+      final cacheKey = '$_cachePrefix$key';
+      _cacheStore[cacheKey] = _CacheEntry(
+        payload: data,
+        timestamp: DateTime.now(),
+      );
     } catch (e) {
-      print('Failed to cache data: $e');
+      developer.log(
+        'Failed to cache data',
+        name: 'CachedDataManager',
+        error: e,
+      );
     }
   }
 
   // Retrieve cached data
   static Future<Map<String, dynamic>?> getCachedData(String key) async {
     try {
-      // In a real app, you'd check timestamps and validity
-      // For this demo, we'll return null to indicate no cached data
-      return null;
+      final cacheKey = '$_cachePrefix$key';
+      final entry = _cacheStore[cacheKey];
+
+      if (entry == null) {
+        return null;
+      }
+
+      final isExpired = DateTime.now().difference(entry.timestamp) > _cacheDuration;
+      if (isExpired) {
+        _cacheStore.remove(cacheKey);
+        return null;
+      }
+
+      return entry.payload;
     } catch (e) {
-      print('Failed to retrieve cached data: $e');
+      developer.log(
+        'Failed to retrieve cached data',
+        name: 'CachedDataManager',
+        error: e,
+      );
       return null;
     }
   }
@@ -279,10 +304,38 @@ class CachedDataManager {
   // Clear expired cache
   static Future<void> clearExpiredCache() async {
     try {
-      // In a real app, you'd implement cache cleanup logic
-      print('Cache cleanup completed');
+      final now = DateTime.now();
+      final expiredKeys = _cacheStore.entries
+          .where((entry) => now.difference(entry.value.timestamp) > _cacheDuration)
+          .map((entry) => entry.key)
+          .toList();
+
+      for (final key in expiredKeys) {
+        _cacheStore.remove(key);
+      }
+
+      if (expiredKeys.isNotEmpty) {
+        developer.log(
+          'Removed ${expiredKeys.length} expired cache entries',
+          name: 'CachedDataManager',
+        );
+      }
     } catch (e) {
-      print('Failed to clear cache: $e');
+      developer.log(
+        'Failed to clear cache',
+        name: 'CachedDataManager',
+        error: e,
+      );
     }
   }
+}
+
+class _CacheEntry {
+  const _CacheEntry({
+    required this.payload,
+    required this.timestamp,
+  });
+
+  final Map<String, dynamic> payload;
+  final DateTime timestamp;
 }

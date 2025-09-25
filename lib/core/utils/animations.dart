@@ -88,7 +88,6 @@ class AppAnimations {
     Duration initialDelay = const Duration(milliseconds: 100),
   }) {
     return children.asMap().entries.map((entry) {
-      final index = entry.key;
       final child = entry.value;
 
       return TweenAnimationBuilder(
@@ -114,19 +113,8 @@ class AppAnimations {
     required Widget child,
     Duration duration = const Duration(milliseconds: 1500),
   }) {
-    return TweenAnimationBuilder(
-      tween: TweenSequence<double>([
-        TweenSequenceItem(tween: Tween<double>(begin: 1.0, end: 1.1), weight: 50),
-        TweenSequenceItem(tween: Tween<double>(begin: 1.1, end: 1.0), weight: 50),
-      ]),
+    return _PulseAnimation(
       duration: duration,
-      repeat: true,
-      builder: (context, value, child) {
-        return Transform.scale(
-          scale: value,
-          child: child,
-        );
-      },
       child: child,
     );
   }
@@ -150,6 +138,65 @@ class AppAnimations {
         );
       },
       child: child,
+    );
+  }
+}
+
+class _PulseAnimation extends StatefulWidget {
+  const _PulseAnimation({
+    required this.child,
+    required this.duration,
+  });
+
+  final Widget child;
+  final Duration duration;
+
+  @override
+  State<_PulseAnimation> createState() => _PulseAnimationState();
+}
+
+class _PulseAnimationState extends State<_PulseAnimation>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: widget.duration,
+    );
+
+    _scaleAnimation = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 1.0, end: 1.1),
+        weight: 50,
+      ),
+      TweenSequenceItem(
+        tween: Tween<double>(begin: 1.1, end: 1.0),
+        weight: 50,
+      ),
+    ]).animate(_controller);
+
+    _controller.repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _scaleAnimation,
+      child: widget.child,
+      builder: (context, child) => Transform.scale(
+        scale: _scaleAnimation.value,
+        child: child,
+      ),
     );
   }
 }

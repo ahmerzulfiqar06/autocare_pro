@@ -67,10 +67,10 @@ jobs:
           fi
           chmod +x android/gradlew
 
+      # ---- Provision signing (writes to android/app/, writes a clean key.properties) ----
       - name: Provision Android keystore & key.properties
         run: |
           echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/app/upload-keystore.jks
-
           echo "storeFile=upload-keystore.jks" > android/key.properties
           echo "storePassword=${ANDROID_KEYSTORE_PASSWORD}" >> android/key.properties
           echo "keyAlias=${ANDROID_KEY_ALIAS}" >> android/key.properties
@@ -81,18 +81,12 @@ jobs:
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_ALIAS_PASSWORD: ${{ secrets.ANDROID_KEY_ALIAS_PASSWORD }}
 
-      - name: Update timezone dep (if needed)
-        run: |
-          if grep -q 'timezone:' pubspec.yaml && grep -q '^ *timezone: *\^0\.9\.' pubspec.yaml; then
-            flutter pub add timezone:^0.10.1
-          fi
-          flutter pub get
+      - name: Pub get (resolve deps)
+        run: flutter pub get
 
       - name: Verify signing files
         run: |
-          echo "== android/app contents =="
           ls -l android/app
-          echo "== android/key.properties =="
           sed -n '1,50p' android/key.properties | sed -E 's/(password=).*/\1****/g'
 
       - name: keytool sanity check
@@ -102,22 +96,39 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
 
-      - name: Build release APK (signed)
+      # ---- Build using Gradle directly so we always get the real stacktrace ----
+      - name: Gradle assembleRelease (with stacktrace)
         run: |
-          flutter --version
-          flutter clean
-          flutter pub get
-          flutter build apk --release -v
+          cd android
+          ./gradlew clean
+          # Full logs to a file + console
+          ./gradlew :app:assembleRelease --no-daemon --stacktrace --info --warning-mode all | tee ../gradle-build.log
+          cd ..
+        shell: bash
+
+      - name: Upload Gradle log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-build-log
+          path: gradle-build.log
+
+      # ---- Copy APK to standard Flutter path for the next steps (in case paths differ) ----
+      - name: Locate APK and normalize path
+        run: |
+          set -e
+          APK_PATH=$(find android/app/build/outputs -type f -name "app-release*.apk" | head -n 1)
+          echo "Found APK: $APK_PATH"
+          mkdir -p build/app/outputs/flutter-apk
+          cp "$APK_PATH" build/app/outputs/flutter-apk/app-release.apk
 
       - name: Upload APK artifact
-        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: app-release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
 
       - name: Firebase App Distribution (Android)
-        if: success()
         uses: wzieba/Firebase-Distribution-Github-Action@v1
         with:
           appId: ${{ secrets.FIREBASE_ANDROID_APP_ID }}
@@ -126,15 +137,3 @@ jobs:
           testers: "ahmerparacha2016@gmail.com"
           releaseNotes: "CI build ${{ github.run_number }} from ${{ github.sha }}"
           debug: true
-
-      - name: Gradle signingReport (diagnostic)
-        if: failure() && hashFiles('android/gradlew') != ''
-        run: |
-          cd android
-          ./gradlew :app:signingReport --no-daemon --stacktrace || true
-
-      - name: Gradle assemble with stacktrace (diagnostic)
-        if: failure() && hashFiles('android/gradlew') != ''
-        run: |
-          cd android
-          ./gradlew app:assembleRelease --no-daemon --stacktrace --info || true

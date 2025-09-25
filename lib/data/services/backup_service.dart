@@ -39,7 +39,7 @@ class BackupService {
       },
     };
 
-    final jsonString = JsonEncoder.withIndent('  ').convert(backupData);
+    final jsonString = const JsonEncoder.withIndent('  ').convert(backupData);
     await file.writeAsString(jsonString);
 
     return file;
@@ -90,7 +90,7 @@ class BackupService {
       },
     };
 
-    final jsonString = JsonEncoder.withIndent('  ').convert(backupData);
+    final jsonString = const JsonEncoder.withIndent('  ').convert(backupData);
     await file.writeAsString(jsonString);
 
     return file;

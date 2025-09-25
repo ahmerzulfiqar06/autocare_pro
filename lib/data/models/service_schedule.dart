@@ -108,16 +108,7 @@ class ServiceSchedule {
   }
 
   // Calculate next service mileage
-  static int? _calculateNextServiceMileage(
-    ScheduleFrequency frequency,
-    int? lastServiceMileage,
-    int? mileageInterval,
-  ) {
-    if (frequency == ScheduleFrequency.mileage && mileageInterval != null && lastServiceMileage != null) {
-      return lastServiceMileage + mileageInterval;
-    }
-    return null;
-  }
+  // Removed unused method
 
   // Check if service is due
   bool get isDue {

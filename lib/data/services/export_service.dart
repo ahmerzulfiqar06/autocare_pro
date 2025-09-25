@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:path_provider/path_provider.dart';
@@ -181,6 +180,7 @@ class ExportService {
           ),
         ),
         pw.SizedBox(height: 10),
+        // ignore: deprecated_member_use
         pw.Table.fromTextArray(
           headers: ['Make', 'Model', 'Year', 'Mileage', 'Status'],
           data: vehicles.map((vehicle) => [
@@ -213,6 +213,7 @@ class ExportService {
           ),
         ),
         pw.SizedBox(height: 10),
+        // ignore: deprecated_member_use
         pw.Table.fromTextArray(
           headers: ['Vehicle', 'Service', 'Date', 'Cost'],
           data: services.take(10).map((service) {
@@ -255,6 +256,7 @@ class ExportService {
           ),
         ),
         pw.SizedBox(height: 10),
+        // ignore: deprecated_member_use
         pw.Table.fromTextArray(
           headers: ['Vehicle', 'Service', 'Next Due', 'Status', 'Days Until'],
           data: schedules.map((schedule) {

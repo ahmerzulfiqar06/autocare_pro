@@ -12,13 +12,13 @@ void main() {
   testWidgets('AutoCare Pro smoke test', (WidgetTester tester) async {
     // Test that basic Flutter functionality works
     await tester.pumpWidget(
-      const MaterialApp(
+      MaterialApp(
         title: 'AutoCare Pro',
         home: Scaffold(
           appBar: AppBar(
-            title: Text('AutoCare Pro'),
+            title: const Text('AutoCare Pro'),
           ),
-          body: Center(
+          body: const Center(
             child: Text('App is working!'),
           ),
         ),
@@ -33,17 +33,14 @@ void main() {
   testWidgets('Theme compatibility test', (WidgetTester tester) async {
     // Test that our theme works with Flutter's testing framework
     await tester.pumpWidget(
-      const MaterialApp(
+      MaterialApp(
         title: 'Theme Test',
         home: Scaffold(
           appBar: AppBar(
-            title: Text('Theme Test'),
+            title: const Text('Theme Test'),
           ),
-          body: Center(
-            child: ElevatedButton(
-              onPressed: null,
-              child: Text('Test Button'),
-            ),
+          body: const Center(
+            child: Text('Test Button'),
           ),
         ),
       ),

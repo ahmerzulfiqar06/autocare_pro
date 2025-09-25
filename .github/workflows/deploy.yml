@@ -39,6 +39,7 @@ jobs:
             "build-tools;35.0.0"
           yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses
 
+      # ---- Caches (speed) ----
       - name: Cache Gradle
         uses: actions/cache@v4
         with:
@@ -55,6 +56,7 @@ jobs:
           key: pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
           restore-keys: pub-${{ runner.os }}-
 
+      # ---- Project hygiene ----
       - name: Remove KTS duplicates if present
         run: |
           rm -f android/settings.gradle.kts || true
@@ -67,21 +69,26 @@ jobs:
           fi
           chmod +x android/gradlew
 
+      # ---- Provision signing (FIXED: correct path + no indentation) ----
       - name: Provision Android keystore & key.properties
         run: |
-          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/upload-keystore.jks
+          # Write keystore where the app module can resolve it
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/app/upload-keystore.jks
+
+          # Write key.properties at android/ (root project). No leading spaces.
           cat > android/key.properties <<EOF
-          storeFile=upload-keystore.jks
-          storePassword=${ANDROID_KEYSTORE_PASSWORD}
-          keyAlias=${ANDROID_KEY_ALIAS}
-          keyPassword=${ANDROID_KEY_ALIAS_PASSWORD}
-          EOF
+storeFile=upload-keystore.jks
+storePassword=${ANDROID_KEYSTORE_PASSWORD}
+keyAlias=${ANDROID_KEY_ALIAS}
+keyPassword=${ANDROID_KEY_ALIAS_PASSWORD}
+EOF
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_ALIAS_PASSWORD: ${{ secrets.ANDROID_KEY_ALIAS_PASSWORD }}
 
+      # Optional: resolve previous pubspec constraint if needed
       - name: Update timezone dep (if needed)
         run: |
           if grep -q 'timezone:' pubspec.yaml && grep -q '^ *timezone: *\^0\.9\.' pubspec.yaml; then
@@ -89,13 +96,35 @@ jobs:
           fi
           flutter pub get
 
+      # ---- Quick sanity on signing BEFORE building ----
+      - name: Verify signing files
+        run: |
+          echo "== android/app contents =="
+          ls -l android/app
+          echo "== android/key.properties =="
+          sed -n '1,50p' android/key.properties | sed -E 's/(password=).*/\1****/g'
+
+      - name: keytool sanity check
+        run: |
+          keytool -list -v -keystore android/app/upload-keystore.jks -alias "$ANDROID_KEY_ALIAS" -storepass "$ANDROID_KEYSTORE_PASSWORD" >/dev/null
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+
+      # ---- Build APK (signed) ----
       - name: Build release APK (signed)
         run: |
           flutter --version
           flutter clean
           flutter pub get
+          # Ensure android/app/build.gradle has:
+          #   signingConfig signingConfigs.release (in release {})
+          #   compileSdk 35, targetSdk 35
+          #   coreLibraryDesugaringEnabled true
+          #   desugar_jdk_libs:2.1.4
           flutter build apk --release -v
 
+      # ---- Upload artifact to GitHub (optional backup) ----
       - name: Upload APK artifact
         if: success()
         uses: actions/upload-artifact@v4
@@ -103,6 +132,7 @@ jobs:
           name: app-release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
 
+      # ---- Distribute to Firebase App Distribution (single tester via token auth) ----
       - name: Firebase App Distribution (Android)
         if: success()
         uses: wzieba/Firebase-Distribution-Github-Action@v1
@@ -110,9 +140,16 @@ jobs:
           appId: ${{ secrets.FIREBASE_ANDROID_APP_ID }}
           token: ${{ secrets.FIREBASE_TOKEN }}
           file: build/app/outputs/flutter-apk/app-release.apk
-          testers: "ahmerparacha2016@gmail.com"  # ← put your email here
+          testers: "ahmerparacha2016@gmail.com"
           releaseNotes: "CI build ${{ github.run_number }} from ${{ github.sha }}"
           debug: true
+
+      # ---- Diagnostics if build fails ----
+      - name: Gradle signingReport (diagnostic)
+        if: failure() && hashFiles('android/gradlew') != ''
+        run: |
+          cd android
+          ./gradlew :app:signingReport --no-daemon --stacktrace || true
 
       - name: Gradle assemble with stacktrace (diagnostic)
         if: failure() && hashFiles('android/gradlew') != ''

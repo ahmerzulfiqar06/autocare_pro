@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:io' as io;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:path_provider/path_provider.dart';
@@ -13,14 +13,14 @@ class ExportService {
   static const String appVersion = '1.0.0';
 
   // Export data to CSV format
-  Future<File> exportToCSV({
+  Future<io.File> exportToCSV({
     required List<Vehicle> vehicles,
     required List<Service> services,
     required List<ServiceSchedule> schedules,
     String fileName = 'autocare_export',
   }) async {
     final directory = await getApplicationDocumentsDirectory();
-    final file = File('${directory.path}/$fileName.csv');
+    final file = io.File('${directory.path}/$fileName.csv');
 
     final csvContent = StringBuffer();
 
@@ -79,7 +79,7 @@ class ExportService {
   }
 
   // Export comprehensive PDF report
-  Future<File> exportToPDF({
+  Future<io.File> exportToPDF({
     required List<Vehicle> vehicles,
     required List<Service> services,
     required List<ServiceSchedule> schedules,
@@ -87,7 +87,7 @@ class ExportService {
   }) async {
     final pdf = pw.Document();
     final directory = await getApplicationDocumentsDirectory();
-    final file = File('${directory.path}/$fileName.pdf');
+    final file = io.File('${directory.path}/$fileName.pdf');
 
     // Create PDF content
     pdf.addPage(
@@ -364,7 +364,7 @@ class ExportService {
     );
   }
 
-  Future<void> shareFile(File file, String fileName) async {
+  Future<void> shareFile(io.File file, String fileName) async {
     try {
       await Share.shareXFiles(
         [XFile(file.path)],

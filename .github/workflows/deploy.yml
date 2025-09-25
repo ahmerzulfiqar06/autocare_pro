@@ -39,13 +39,14 @@ jobs:
             "build-tools;35.0.0"
           yes | "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses
 
+      # ---- Caches ----
       - name: Cache Gradle
         uses: actions/cache@v4
         with:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle', '**/*.gradle.kts', 'gradle-wrapper.properties') }}
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/*.gradle', '**/*.gradle.kts', 'gradle/wrapper/gradle-wrapper.properties') }}
           restore-keys: gradle-${{ runner.os }}-
 
       - name: Cache Pub
@@ -55,6 +56,7 @@ jobs:
           key: pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
           restore-keys: pub-${{ runner.os }}-
 
+      # ---- Project hygiene ----
       - name: Remove KTS duplicates if present
         run: |
           rm -f android/settings.gradle.kts || true
@@ -67,10 +69,12 @@ jobs:
           fi
           chmod +x android/gradlew
 
-      # ---- Provision signing (writes to android/app/, writes a clean key.properties) ----
+      # ---- Signing (writes JKS into android/app and a clean key.properties in android/) ----
       - name: Provision Android keystore & key.properties
         run: |
           echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/app/upload-keystore.jks
+
+          # no indentation; plain Java properties format
           echo "storeFile=upload-keystore.jks" > android/key.properties
           echo "storePassword=${ANDROID_KEYSTORE_PASSWORD}" >> android/key.properties
           echo "keyAlias=${ANDROID_KEY_ALIAS}" >> android/key.properties
@@ -87,6 +91,7 @@ jobs:
       - name: Verify signing files
         run: |
           ls -l android/app
+          echo "---- key.properties ----"
           sed -n '1,50p' android/key.properties | sed -E 's/(password=).*/\1****/g'
 
       - name: keytool sanity check
@@ -96,12 +101,11 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
 
-      # ---- Build using Gradle directly so we always get the real stacktrace ----
+      # ---- Build using Gradle so we always capture the real error if any ----
       - name: Gradle assembleRelease (with stacktrace)
         run: |
           cd android
           ./gradlew clean
-          # Full logs to a file + console
           ./gradlew :app:assembleRelease --no-daemon --stacktrace --info --warning-mode all | tee ../gradle-build.log
           cd ..
         shell: bash
@@ -113,14 +117,42 @@ jobs:
           name: gradle-build-log
           path: gradle-build.log
 
-      # ---- Copy APK to standard Flutter path for the next steps (in case paths differ) ----
+      # ---- Find the APK robustly and normalize the path ----
       - name: Locate APK and normalize path
         run: |
           set -e
-          APK_PATH=$(find android/app/build/outputs -type f -name "app-release*.apk" | head -n 1)
-          echo "Found APK: $APK_PATH"
+
+          echo "=== Listing potential output folders (ignore errors if missing) ==="
+          ls -R android/app/build/outputs || true
+          ls -R build/app/outputs || true
+
+          APK=""
+
+          # 1) Common Gradle output
+          if [ -f android/app/build/outputs/apk/release/app-release.apk ]; then
+            APK=android/app/build/outputs/apk/release/app-release.apk
+          fi
+
+          # 2) Any Gradle-produced release APK (fallback)
+          if [ -z "$APK" ]; then
+            APK=$(find android/app/build/outputs -type f \
+                    \( -name "app-release*.apk" -o -name "app-*-release*.apk" \) \
+                    2>/dev/null | head -n 1 || true)
+          fi
+
+          # 3) Flutter’s default path (if a flutter build was used)
+          if [ -z "$APK" ] && [ -d build/app/outputs/flutter-apk ]; then
+            APK=$(find build/app/outputs/flutter-apk -type f -name "app-release*.apk" | head -n 1 || true)
+          fi
+
+          if [ -z "$APK" ]; then
+            echo "::error::No APK found. Check the Gradle step logs above for the build error."
+            exit 1
+          fi
+
+          echo "Found APK: $APK"
           mkdir -p build/app/outputs/flutter-apk
-          cp "$APK_PATH" build/app/outputs/flutter-apk/app-release.apk
+          cp "$APK" build/app/outputs/flutter-apk/app-release.apk
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4

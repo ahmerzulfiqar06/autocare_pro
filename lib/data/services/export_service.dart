@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:convert';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:path_provider/path_provider.dart';
@@ -346,11 +345,10 @@ class ExportService {
   // Share export file
   Future<void> shareFile(File file, String fileName) async {
     try {
-      await SharePlus.instance.share(
-        sharePositionOrigin: Rect.zero,
-        shareFiles: [XFile(file.path)],
-        subject: 'Vehicle Maintenance Report',
+      await Share.shareXFiles(
+        [XFile(file.path)],
         text: 'AutoCare Pro - $fileName',
+        subject: 'Vehicle Maintenance Report',
       );
     } catch (e) {
       throw Exception('Failed to share file: $e');

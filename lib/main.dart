@@ -13,7 +13,6 @@ import 'package:autocare_pro/presentation/providers/vehicle_provider.dart';
 import 'package:autocare_pro/presentation/providers/service_provider.dart';
 import 'package:autocare_pro/presentation/screens/dashboard_screen.dart';
 import 'package:autocare_pro/presentation/screens/vehicle_list_screen.dart';
-import 'package:autocare_pro/data/services/connectivity_service.dart';
 import 'package:autocare_pro/presentation/screens/vehicle_details_screen.dart';
 import 'package:autocare_pro/presentation/screens/add_vehicle_screen.dart';
 import 'package:autocare_pro/presentation/screens/service_list_screen.dart';
@@ -83,26 +82,6 @@ Map<String, WidgetBuilder> _getRoutes() {
   };
 }
 
-// Temporary placeholder screen for development
-class _PlaceholderScreen extends StatelessWidget {
-  const _PlaceholderScreen(this.title);
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: Center(
-        child: Text(
-          '$title Screen\n\n🚗 AutoCare Pro is Running! ✨',
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.headlineMedium,
-        ),
-      ),
-    );
-  }
-}
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -119,8 +98,6 @@ void main() async {
   // Initialize notification manager
   final notificationManager = NotificationManager(
     notificationService: notificationService,
-    serviceRepository: serviceRepository,
-    vehicleRepository: vehicleRepository,
   );
 
   // Initialize connectivity service

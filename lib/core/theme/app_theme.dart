@@ -177,13 +177,13 @@ class AppTheme {
       ),
 
       // Floating action button theme
-      floatingActionButtonTheme: FloatingActionButtonThemeData(
+      floatingActionButtonTheme: const FloatingActionButtonThemeData(
         backgroundColor: primaryBlue,
         foregroundColor: Colors.white,
       ),
 
       // Bottom navigation bar theme
-      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: Colors.white,
         selectedItemColor: primaryBlue,
         unselectedItemColor: Colors.black54,

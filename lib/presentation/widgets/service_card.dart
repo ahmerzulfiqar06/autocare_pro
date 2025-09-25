@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:autocare_pro/core/utils/helpers.dart';
 import 'package:autocare_pro/data/models/service.dart';
 
 class ServiceCard extends StatelessWidget {

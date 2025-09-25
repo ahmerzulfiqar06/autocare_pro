@@ -33,19 +33,15 @@ void main() {
   testWidgets('Theme compatibility test', (WidgetTester tester) async {
     // Test that our theme works with Flutter's testing framework
     await tester.pumpWidget(
-      MaterialApp(
+      const MaterialApp(
         title: 'Theme Test',
-        theme: ThemeData(
-          useMaterial3: true,
-          primarySwatch: Colors.blue,
-        ),
         home: Scaffold(
           appBar: AppBar(
             title: Text('Theme Test'),
           ),
           body: Center(
             child: ElevatedButton(
-              onPressed: () {},
+              onPressed: null,
               child: Text('Test Button'),
             ),
           ),

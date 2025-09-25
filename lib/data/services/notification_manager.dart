@@ -1,5 +1,3 @@
-import 'package:autocare_pro/data/models/service_schedule.dart';
-import 'package:autocare_pro/data/models/vehicle.dart';
 import 'package:autocare_pro/data/services/notification_service.dart';
 
 class NotificationManager {

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:autocare_pro/core/utils/animations.dart';
 import 'package:autocare_pro/core/widgets/custom_icon.dart';
 import 'package:autocare_pro/data/services/export_service.dart';
@@ -9,6 +10,7 @@ import 'package:autocare_pro/data/models/service.dart';
 import 'package:autocare_pro/data/models/service_schedule.dart';
 import 'package:autocare_pro/presentation/providers/vehicle_provider.dart';
 import 'package:autocare_pro/presentation/providers/service_provider.dart';
+
 
 class ExportDialog extends StatefulWidget {
   const ExportDialog({super.key});
@@ -327,7 +329,7 @@ class _ExportDialogState extends State<ExportDialog> with TickerProviderStateMix
       Navigator.of(context).pop();
 
       await Share.share(
-        text: summary,
+        summary,
         subject: 'AutoCare Pro - Maintenance Summary',
       );
 

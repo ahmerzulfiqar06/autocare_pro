@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:autocare_pro/core/utils/helpers.dart';
 import 'package:autocare_pro/data/models/service.dart';
-import 'package:autocare_pro/data/models/vehicle.dart';
 import 'package:autocare_pro/presentation/providers/service_provider.dart';
 import 'package:autocare_pro/presentation/providers/vehicle_provider.dart';
 

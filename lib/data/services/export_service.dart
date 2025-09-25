@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:path_provider/path_provider.dart';
@@ -110,6 +111,40 @@ class ExportService {
     return file;
   }
 
+  pw.Table _buildTable({
+    required List<String> headers,
+    required List<List<String>> rows,
+  }) {
+    return pw.Table(
+      border: pw.TableBorder.all(),
+      children: [
+        pw.TableRow(
+          decoration: const pw.BoxDecoration(color: PdfColors.grey300),
+          children: [
+            for (final header in headers)
+              pw.Padding(
+                padding: const pw.EdgeInsets.all(8),
+                child: pw.Text(
+                  header,
+                  style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                ),
+              ),
+          ],
+        ),
+        for (final row in rows)
+          pw.TableRow(
+            children: [
+              for (final cell in row)
+                pw.Padding(
+                  padding: const pw.EdgeInsets.all(8),
+                  child: pw.Text(cell),
+                ),
+            ],
+          ),
+      ],
+    );
+  }
+
   // Build PDF header
   pw.Widget _buildPDFHeader() {
     return pw.Container(
@@ -149,23 +184,6 @@ class ExportService {
     );
   }
 
-  // Build PDF footer
-  pw.Widget _buildPDFFooter(pw.Context context) {
-    return pw.Container(
-      padding: const pw.EdgeInsets.all(10),
-      decoration: pw.BoxDecoration(
-        border: pw.Border.top(width: 1),
-      ),
-      child: pw.Row(
-        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-        children: [
-          pw.Text('Page ${context.pageNumber}'),
-          pw.Text(appVersion),
-        ],
-      ),
-    );
-  }
-
   // Build vehicle section
   pw.Widget _buildVehicleSection(List<Vehicle> vehicles) {
     return pw.Column(
@@ -180,20 +198,15 @@ class ExportService {
           ),
         ),
         pw.SizedBox(height: 10),
-        // ignore: deprecated_member_use
-        pw.Table.fromTextArray(
+        _buildTable(
           headers: ['Make', 'Model', 'Year', 'Mileage', 'Status'],
-          data: vehicles.map((vehicle) => [
+          rows: vehicles.map((vehicle) => [
             vehicle.make,
             vehicle.model,
             vehicle.year.toString(),
             '${vehicle.currentMileage.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')} miles',
             vehicle.status.displayName,
           ]).toList(),
-          border: pw.TableBorder.all(),
-          headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-          cellAlignment: pw.Alignment.centerLeft,
-          cellHeight: 30,
         ),
       ],
     );
@@ -213,10 +226,9 @@ class ExportService {
           ),
         ),
         pw.SizedBox(height: 10),
-        // ignore: deprecated_member_use
-        pw.Table.fromTextArray(
+        _buildTable(
           headers: ['Vehicle', 'Service', 'Date', 'Cost'],
-          data: services.take(10).map((service) {
+          rows: services.take(10).map((service) {
             final vehicle = vehicles.firstWhere(
               (v) => v.id == service.vehicleId,
               orElse: () => Vehicle(
@@ -233,10 +245,6 @@ class ExportService {
               Helpers.formatCurrency(service.cost),
             ];
           }).toList(),
-          border: pw.TableBorder.all(),
-          headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-          cellAlignment: pw.Alignment.centerLeft,
-          cellHeight: 30,
         ),
       ],
     );
@@ -256,10 +264,9 @@ class ExportService {
           ),
         ),
         pw.SizedBox(height: 10),
-        // ignore: deprecated_member_use
-        pw.Table.fromTextArray(
+        _buildTable(
           headers: ['Vehicle', 'Service', 'Next Due', 'Status', 'Days Until'],
-          data: schedules.map((schedule) {
+          rows: schedules.map((schedule) {
             final vehicle = vehicles.firstWhere(
               (v) => v.id == schedule.vehicleId,
               orElse: () => Vehicle(
@@ -283,10 +290,6 @@ class ExportService {
               daysUntil < 0 ? '${-daysUntil} days overdue' : '$daysUntil days',
             ];
           }).toList(),
-          border: pw.TableBorder.all(),
-          headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-          cellAlignment: pw.Alignment.centerLeft,
-          cellHeight: 30,
         ),
       ],
     );
@@ -344,7 +347,23 @@ class ExportService {
     );
   }
 
-  // Share export file
+  // Build PDF footer
+  pw.Widget _buildPDFFooter(pw.Context context) {
+    return pw.Container(
+      padding: const pw.EdgeInsets.all(10),
+      decoration: pw.BoxDecoration(
+        border: pw.Border.top(width: 1),
+      ),
+      child: pw.Row(
+        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+        children: [
+          pw.Text('Page ${context.pageNumber}'),
+          pw.Text(appVersion),
+        ],
+      ),
+    );
+  }
+
   Future<void> shareFile(File file, String fileName) async {
     try {
       await Share.shareXFiles(
@@ -357,7 +376,6 @@ class ExportService {
     }
   }
 
-  // Generate quick summary text for sharing
   String generateSummaryText({
     required List<Vehicle> vehicles,
     required List<Service> services,

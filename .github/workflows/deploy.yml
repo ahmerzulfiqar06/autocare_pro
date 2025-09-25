@@ -69,12 +69,10 @@ jobs:
           fi
           chmod +x android/gradlew
 
-      # ---- Signing (writes JKS into android/app and a clean key.properties in android/) ----
+      # ---- Signing ----
       - name: Provision Android keystore & key.properties
         run: |
           echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > android/app/upload-keystore.jks
-
-          # no indentation; plain Java properties format
           echo "storeFile=upload-keystore.jks" > android/key.properties
           echo "storePassword=${ANDROID_KEYSTORE_PASSWORD}" >> android/key.properties
           echo "keyAlias=${ANDROID_KEY_ALIAS}" >> android/key.properties
@@ -101,7 +99,7 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
 
-      # ---- Build using Gradle so we always capture the real error if any ----
+      # ---- Build APK ----
       - name: Gradle assembleRelease (with stacktrace)
         run: |
           cd android
@@ -117,8 +115,8 @@ jobs:
           name: gradle-build-log
           path: gradle-build.log
 
-      # ---- Find the APK robustly and normalize the path ----
-      - name: Locate APK and normalize path
+      # ---- Locate, normalize, and rename APK ----
+      - name: Locate and rename APK
         run: |
           set -e
 
@@ -140,7 +138,7 @@ jobs:
                     2>/dev/null | head -n 1 || true)
           fi
 
-          # 3) Flutter’s default path (if a flutter build was used)
+          # 3) Flutter’s default path
           if [ -z "$APK" ] && [ -d build/app/outputs/flutter-apk ]; then
             APK=$(find build/app/outputs/flutter-apk -type f -name "app-release*.apk" | head -n 1 || true)
           fi
@@ -150,22 +148,34 @@ jobs:
             exit 1
           fi
 
-          echo "Found APK: $APK"
+          echo "✅ Found APK: $APK"
+
           mkdir -p build/app/outputs/flutter-apk
-          cp "$APK" build/app/outputs/flutter-apk/app-release.apk
+
+          # Build dynamic filename with date + build number
+          DATE=$(date +'%Y-%m-%d')
+          DEST="build/app/outputs/flutter-apk/app-release-${DATE}-build-${GITHUB_RUN_NUMBER}.apk"
+
+          if [ "$APK" != "$DEST" ]; then
+            cp "$APK" "$DEST"
+          else
+            echo "📦 APK already at correct location, skipping copy."
+          fi
+
+          echo "FINAL_APK_PATH=$DEST" >> $GITHUB_ENV
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: ${{ env.FINAL_APK_PATH }}
 
       - name: Firebase App Distribution (Android)
         uses: wzieba/Firebase-Distribution-Github-Action@v1
         with:
           appId: ${{ secrets.FIREBASE_ANDROID_APP_ID }}
           token: ${{ secrets.FIREBASE_TOKEN }}
-          file: build/app/outputs/flutter-apk/app-release.apk
+          file: ${{ env.FINAL_APK_PATH }}
           testers: "ahmerparacha2016@gmail.com"
-          releaseNotes: "CI build ${{ github.run_number }} from ${{ github.sha }}"
+          releaseNotes: "📱 CI build ${{ github.run_number }} • Commit ${{ github.sha }} • $(date +'%Y-%m-%d')"
           debug: true

@@ -19,8 +19,8 @@ android {
     applicationId "dev.ahmer.autocarepro"
     minSdk 23
     targetSdk 35
-    versionCode flutterVersionCode.toInteger()
-    versionName flutterVersionName
+    versionCode 1.1
+    versionName "1.1"
     multiDexEnabled true
   }
 
